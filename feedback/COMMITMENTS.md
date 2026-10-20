@@ -35,3 +35,19 @@ Each hash above commits to the **original text** of the item, not to whatever th
 | 022-025 repros | `feedback/02[2-5]-repro.mts` (unchanged) | `sha256sum feedback/02[2-5]-repro.mts` |
 
 To see exactly what changed in a report since it was committed: `diff feedback/commitments/<file> feedback/<file>`.
+
+## Items 026-028 (committed 2026-10-21, not yet revealed)
+
+Same rule as above: each line is the `sha256sum` of the exact file that will be published. Originals are kept byte-exact in `commitments/` (not pushed until submission).
+
+```
+ebf0308b660f23eea0a8697a031f02183b70572ad6b17f19673f8446c0bade68  item 026 report (.md)
+24b392e76eaca35d90534dbccd6d416cedbaf8e5bb6f457b1d6783809128dcc5  item 026 repro script
+58570bcbf966ccc351ccd0ca731f5d505d32cacf96bb94132291c6a29bbde10e  item 026 repro output (.txt)
+f63622c62541b8351481dab5503f97aec83908db434d7b259db277f7b498ee5c  item 027 report (.md)
+4091a00e8b311f30d4460b9317e91ceaeca823a27a72083b7c8e3620ef028367  item 027 repro script
+f78c291793489eb39f1e18601b8783165ec7026e49de846413f7254ce2427a70  item 027 repro output (.txt)
+b81b2e02fb1a40ad658ca4ff6e97b1c1f46abd21153339ab98c65990341beca8  item 028 report (.md)
+188e7fe2ea55b52e70a3c8744a793201f7b9f8e3fc543e11cc818ef915c06b30  item 028 repro script
+ac7b8036fc6ba73e7449083bc936503a4cf105d388dd8e4f7a1d7143556138dc  item 028 repro output (.txt)
+```
