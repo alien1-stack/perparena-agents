@@ -74,6 +74,8 @@ Before it opens new legs, each tick can send the target book to Somnia's **LLM I
 - **Audit trail:** the verdict, the reason, the request and consensus tx hashes, and the receipt links go into `journal/` as a `somnia-agent` event and into `docs/data.json` as `riskOfficer`.
 - **Cost:** the deposit is 0.24 STT (0.03 reserve + 3 × 0.07), and unspent funds are rebated. The three calls below cost 0.643 STT in total, gas included. `SOMNIA_AGENT_MAX_DEPOSIT_STT` caps the deposit (default 1). Set `SOMNIA_AGENT_PRIVATE_KEY` to a Shannon wallet that holds STT.
 
+**Gate mode on the live bot (since 2026-10-20 20:05 UTC):** live ticks now run with `AUTOPILOT_SOMNIA_AGENT=gate` and `AUTOPILOT_SOMNIA_REVIEW_EVERY_TICK=1`, so every tick of the real Tokyo book gets an on-chain verdict, and it is written to `journal/` next to the Tokyo trades. The first live review gave APPROVE ("net exposure 0.0% of gross, both legs receive funding, +0.48 USDso/day, max loss 0.8% of equity, gross leverage 0.20x"), request tx `0x2d002ca0a57727696adf87673a3f8fb73f06c3d6050a78ec63ea5a1d417fe32b`. See the [Decision Timeline](https://alien1-stack.github.io/alien1-stack/radar/timeline.html).
+
 Live calls on Shannon testnet, 2026-10-20. The consensus tx is the validator `submitResponse` that reached 2 of 3, about 1 s after the request. Calls 2 and 3 use the structured prompt with hand-written example facts (`--example good|bad`).
 
 | # | Book | Verdict (consensus answer) | Request tx | Consensus tx | Receipts |
