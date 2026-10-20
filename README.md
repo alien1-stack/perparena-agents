@@ -56,6 +56,7 @@ Each command runs one tick. Read the dry-run output first, then set `DRY_RUN=fal
 | `AUTOPILOT_NET_CAP_USDSO` | 150 | Maximum \|long − short\| notional |
 | `AUTOPILOT_MIN_APR` / `AUTOPILOT_EXIT_APR` | 0.15 / 0.05 | Funding to enter / to stay |
 | `AUTOPILOT_STOP_LOSS_PCT` | 4 | Per-leg stop-loss, watched each tick |
+| `AUTOPILOT_COOLDOWN_HOURS` | 12 | No re-entry into a market for this long after its stop-loss |
 | `AUTOPILOT_SOMNIA_AGENT` | off | `advisory`: ask the on-chain AI risk officer and journal its verdict. `gate`: also skip entries unless it approves (see below) |
 
 ## Somnia Agents: on-chain AI risk officer
@@ -89,6 +90,11 @@ AUTOPILOT_SOMNIA_AGENT=gate SOMNIA_AGENT_PRIVATE_KEY=0x<shannon key> NETWORK=hid
 |---|---|---|---|
 | 2026-10-20 ~14:39 | short BTC-PERP 0.0012 (funding +132.7% APR, paid to shorts) | 83,209.2 | `0x92e9cf8ebd54b7345a408ec4cea11cb9321572045b70585e44e498463e41d47f` (block 28552745) |
 | 2026-10-20 ~14:39 | long LIT-PERP 29.8 (funding −28.8% APR, paid to longs) | 3.3474 | `0xd1b752fb21a8119e6c57900b226d1463ff081d2d83372871df3c633e1aa1b877` (block 28552762) |
+
+| 2026-10-20 ~18:47 | close long LIT-PERP 29.8 (per-leg stop-loss at −4.97%) | 3.18 | `0xa59c900f5f88f5fba9996b4103180fa224ed358715a0c25e411f6b5fbb73903a` |
+| 2026-10-20 ~18:47 | re-open long LIT-PERP 31.3 (funding still −35.9% APR, paid to longs) | 3.20 | `0x49ff342d0ec1b103c74201880e137177176d6b3093b3b8b887617de4b53fb307` |
+
+The same-tick re-entry after a stop exposed a churn risk, so the bot now has a stop-loss cooldown (`AUTOPILOT_COOLDOWN_HOURS`, default 12): a market that was stopped out is not re-entered until the cooldown ends.
 
 The bot key `0x775275…Bb47` is linked to the trading wallet with Perps-only access (Link a bot), so it places orders through `placeOrderFor` and can never withdraw. Net exposure ≈ 0 (100 USDso per leg).
 
