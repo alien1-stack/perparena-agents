@@ -56,6 +56,32 @@ Each command runs one tick. Read the dry-run output first, then set `DRY_RUN=fal
 | `AUTOPILOT_NET_CAP_USDSO` | 150 | Maximum \|long − short\| notional |
 | `AUTOPILOT_MIN_APR` / `AUTOPILOT_EXIT_APR` | 0.15 / 0.05 | Funding to enter / to stay |
 | `AUTOPILOT_STOP_LOSS_PCT` | 4 | Per-leg stop-loss, watched each tick |
+| `AUTOPILOT_SOMNIA_AGENT` | off | `advisory`: ask the on-chain AI risk officer and journal its verdict. `gate`: also skip entries unless it approves (see below) |
+
+## Somnia Agents: on-chain AI risk officer
+
+Before it opens new legs, each tick can send the target book to Somnia's **LLM Inference agent** (Qwen3-30B, agent id `12847293847561029384`). The agent runs on a 3-validator subcommittee on Somnia Shannon testnet (chain 50312), and an answer is accepted only when 2 of the 3 validators return the same output. The request goes through `SomniaAgents.createRequest` at `0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776` with an ABI-encoded `inferString` payload.
+
+- **Facts, not prose:** the prompt lists each leg's side, notional and funding APR, and whether the leg receives or pays funding. It also gives net exposure, the per-leg stop-loss, max loss in USDso and as a share of equity, gross leverage, and the pool headroom for each leg (`getMaxPerpOrderSize`, plus the cap that binds it). The bot computes every number, so the model judges them rather than doing arithmetic. The policy asks the model to approve only if: net exposure is at most 10% of gross, every leg receives funding, max loss is at most 5% of equity, gross leverage is at most 3x, and every leg fits its headroom. It must answer `APPROVE|REJECT: <reason referencing the numbers>`.
+- **Modes:** `advisory` journals the verdict and trades anyway. `gate` opens no new legs unless the verdict is `APPROVE`; a `REJECT`, no verdict, or an error all block. Exits and stop-losses run first in both modes, so the gate can only reduce risk.
+- **Audit trail:** the verdict, the reason, the request and consensus tx hashes, and the receipt links go into `journal/` as a `somnia-agent` event and into `docs/data.json` as `riskOfficer`.
+- **Cost:** the deposit is 0.24 STT (0.03 reserve + 3 × 0.07), and unspent funds are rebated. The three calls below cost 0.643 STT in total, gas included. `SOMNIA_AGENT_MAX_DEPOSIT_STT` caps the deposit (default 1). Set `SOMNIA_AGENT_PRIVATE_KEY` to a Shannon wallet that holds STT.
+
+Live calls on Shannon testnet, 2026-10-20. The consensus tx is the validator `submitResponse` that reached 2 of 3, about 1 s after the request. Calls 2 and 3 use the structured prompt with hand-written example facts (`--example good|bad`).
+
+| # | Book | Verdict (consensus answer) | Request tx | Consensus tx | Receipts |
+|---|---|---|---|---|---|
+| 1 | short BTC-PERP 100 at +180% APR, long LIT-PERP 100 at −42% APR, net 0 (old free-text prompt) | **REJECT**: "High risk of adverse price movement due to lack of net exposure hedging." This reason is wrong, which is why the prompt now uses structured facts | [`0xf4d2231b…`](https://shannon-explorer.somnia.network/tx/0xf4d2231b4829a6515ced393d75590ae9fd54fe83fff39e4d7d327b319b62fc7d) | [`0xefbbd6c3…`](https://shannon-explorer.somnia.network/tx/0xefbbd6c3247affb208417bab357a457b28ce4ae1dcd2deeef682fed68db88cd1) | [17364447](https://receipts.testnet.agents.somnia.host/agent-receipts?contractAddress=0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776&type=minimal&requestId=17364447) |
+| 2 | same two legs, both receiving funding; net 0; equity 500; 0.40x gross; max loss 8 USDso (1.6%); within headroom | **APPROVE**: "net exposure 0.0% ≤ 10%, both legs receive funding with positive expected net funding 0.61 USDso/day, max loss 1.6% ≤ 5%, gross leverage 0.40x ≤ 3x, and all legs fit within pool headroom." | [`0x860c0bb1…`](https://shannon-explorer.somnia.network/tx/0x860c0bb1e8a10fe1d83abc2928ab91695b78f920a5bcb5ee8e2f12cb6ca55efb) | [`0x383ecd66…`](https://shannon-explorer.somnia.network/tx/0x383ecd66486fe8d04ee4658cbbabb1e753e9820c8ea42da5266165b29cb88ff6) | [17364977](https://receipts.testnet.agents.somnia.host/agent-receipts?contractAddress=0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776&type=minimal&requestId=17364977) |
+| 3 | long BTC-PERP 2000 at +180% APR (pays funding), equity 100, 20x net long, max loss 80 USDso (80%), over the 1500 headroom | **REJECT**: "all legs within pool headroom: NO" | [`0xa369d2dd…`](https://shannon-explorer.somnia.network/tx/0xa369d2dd5db9a21e857f1f9e6000d56134122dc91347cde84ba47cc0653cd506) | [`0x1ef58cf4…`](https://shannon-explorer.somnia.network/tx/0x1ef58cf47b7f438ca71281bd7a279874a3eab086489a8bcc12e2820d60b080a9) | [17365010](https://receipts.testnet.agents.somnia.host/agent-receipts?contractAddress=0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776&type=minimal&requestId=17365010) |
+
+```bash
+cd kit/strategies/arena-autopilot
+npm run risk-officer -- --print good                                              # show the prompt, free
+SOMNIA_AGENT_PRIVATE_KEY=0x<shannon key> npm run risk-officer -- --example bad    # new request (~0.21 STT)
+npm run risk-officer -- --tx 0x<createRequest tx>                                 # re-read a result, free
+AUTOPILOT_SOMNIA_AGENT=gate SOMNIA_AGENT_PRIVATE_KEY=0x<shannon key> NETWORK=hideki PRIVATE_KEY=0x<bot key> OWNER_ADDRESS=0x<app wallet> DRY_RUN=true npx tsx src/tick.ts
+```
 
 ## Live orders on Somnia testnet
 
