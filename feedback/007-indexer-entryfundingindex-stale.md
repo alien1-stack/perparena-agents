@@ -33,4 +33,7 @@ Update `PerpPosition.entryFundingIndex` in the indexer on the event that re-base
 Output above, from 2026-10-20 ~13:50 UTC, indexer head ~28,511,400. The script is in this folder.
 
 ## Environment
-@somnia-chain/markets-sdk 0.32.1, Node 22, Somnia Tokyo testnet (chain 50383), indexer https://hideki-dev.smk.somnia.host/v1/graphql, read-only.
+- SDK: @somnia-chain/markets-sdk 0.32.1
+- Network: Somnia Tokyo testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network)
+- Wallet: n/a (read-only repro, no account needed)
+- Other: Node 22, indexer https://hideki-dev.smk.somnia.host/v1/graphql, read-only.
