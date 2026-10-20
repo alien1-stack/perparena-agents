@@ -65,6 +65,56 @@ Each command runs one tick. Read the dry-run output first, then set `DRY_RUN=fal
 | `AUTOPILOT_COOLDOWN_HOURS` | 12 | No re-entry into a market for this long after its stop-loss |
 | `AUTOPILOT_SOMNIA_AGENT` | off | `advisory`: ask the on-chain AI risk officer and journal its verdict. `gate`: also skip entries unless it approves (see below) |
 
+The [radar](https://alien1-stack.github.io/alien1-stack/radar/) has a **Trade ↗** link on every market (it opens `app.testnet.dreamdex.io/trade/perps/tokyo/<BASE>-PERP`) and a **Run it with Autopilot** button on the top carry pair. The button copies the dry-run command above with `AUTOPILOT_SOMNIA_AGENT=gate` added.
+
+## Mainnet readiness
+
+**Status (checked 2026-10-20): Somnia mainnet has no dreamDEX perp markets yet, so Autopilot cannot trade there today.** The kit refuses to start on mainnet, by design:
+
+- The mainnet indexer (`prd.smk.somnia.host`) returns 0 `PERP` markets.
+- `SOMNIA_MAINNET_ADDRESSES` in `@somnia-chain/markets-sdk` (0.30.0 in `kit/`, and 0.32.1, the newest version we checked) has no perp singletons: no `marginBank`, no `perpPoolFactory`, no `priceFeedScheduler`.
+- `kit/packages/perp-core/src/config.ts` throws on `NETWORK=mainnet` and leaves the mainnet `OPERATOR_REGISTRY` at `0x000…0`.
+
+The mainnet RPC (`api.infra.mainnet.somnia.network`), indexer (`prd.smk.somnia.host`) and chain id (5031) are already in perp-core's `ENDPOINTS`. Once dreamDEX publishes the mainnet perp addresses, the switch is one environment variable:
+
+```bash
+NETWORK=mainnet PRIVATE_KEY=0x<bot key> OWNER_ADDRESS=0x<your wallet> AUTOPILOT_SOMNIA_AGENT=gate DRY_RUN=true npx tsx src/tick.ts
+```
+
+That command only works after this small perp-core change, which we have **not** made, because there are no perp markets for it to reach yet:
+
+```ts
+// kit/packages/perp-core/src/config.ts: let mainnet through (and delete the `if (raw === "mainnet") throw` block above it)
+const PERP_NETWORKS: readonly Network[] = ["hideki", "testnet", "mainnet"];
+// kit/packages/perp-core/src/exchange.ts: also import SOMNIA_MAINNET_ADDRESSES, then pick the address set per network instead of always testnet
+addresses: config.network === "mainnet" ? SOMNIA_MAINNET_ADDRESSES : SOMNIA_TESTNET_ADDRESSES,
+```
+
+Then update `@somnia-chain/markets-sdk` to the first release whose `SOMNIA_MAINNET_ADDRESSES` includes `marginBank` and `perpPoolFactory`.
+
+**What else in the code is testnet-only:**
+
+| Where | What | Blocks mainnet? |
+|---|---|---|
+| `perp-core/src/config.ts` | `NETWORK=mainnet` refused, and `PERP_NETWORKS` is only `hideki`/`testnet` | Yes. This is the guard above |
+| `perp-core/src/exchange.ts` | `addresses: SOMNIA_TESTNET_ADDRESSES` is hardcoded | Yes. It needs the per-network pick above |
+| `perp-core/src/config.ts` | Mainnet `OPERATOR_REGISTRY` is `0x0` | No. Only stop orders use it, and Autopilot watches stops itself. If you need it, set `OPERATOR_PERMISSIONS_REGISTRY` |
+| `arena-autopilot/src/tick.ts` (lines 91, 236) | Equity and margin are divided by `1e18`, not by the quote token's `quoteDecimals` | No. It affects only the journal, the dashboard, and the equity the risk officer sees. Order sizing uses the market's own decimals. Check this if mainnet collateral is not 18-decimal |
+| `arena-autopilot/src/somnia-agent.ts` | The risk officer runs on Somnia Shannon testnet (chain 50312) and is paid in STT | No. It is a separate chain from the one you trade on. Gate mode keeps working as long as `SOMNIA_AGENT_PRIVATE_KEY` holds STT |
+| `docs/radar.html` | Reads the Tokyo RPC and indexer, and Trade links go to `app.testnet.dreamdex.io` | No. The page shows a "Network: Somnia Tokyo testnet" badge, and these switch when perps launch |
+
+**Safety defaults, unchanged on mainnet:**
+
+| Default | Value |
+|---|---|
+| `DRY_RUN` | `true`. The bot sends nothing until you set `DRY_RUN=false`. Run dry first on mainnet |
+| Leg notional | 100 (`AUTOPILOT_LEG_NOTIONAL_USDSO`) |
+| Per-leg stop-loss | 4% (`AUTOPILOT_STOP_LOSS_PCT`) |
+| Cooldown after a stop | 12 h (`AUTOPILOT_COOLDOWN_HOURS`) |
+| Somnia Agents gate | `AUTOPILOT_SOMNIA_AGENT=gate`. No new legs open unless the on-chain risk officer says `APPROVE` |
+
+**The bot key can never withdraw.** It is linked with [Link a bot](https://app.testnet.dreamdex.io/docs/trading/common/link-a-bot) (Perps only), so it can place and cancel orders for your account through `placeOrderFor`. Funds stay in your wallet's account. Link a new bot key on mainnet the same way. Do not reuse a testnet key.
+
 ## Somnia Agents: on-chain AI risk officer
 
 Before it opens new legs, each tick can send the target book to Somnia's **LLM Inference agent** (Qwen3-30B, agent id `12847293847561029384`). The agent runs on a 3-validator subcommittee on Somnia Shannon testnet (chain 50312), and an answer is accepted only when 2 of the 3 validators return the same output. The request goes through `SomniaAgents.createRequest` at `0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776` with an ABI-encoded `inferString` payload.
