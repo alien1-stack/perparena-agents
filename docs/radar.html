@@ -57,6 +57,13 @@
   .xkpis div>span{display:block;font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
   .xkpis b{font:500 18px "Geist Mono",monospace}
   a{color:var(--acc)}
+  .lb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:12px;margin-top:10px}
+  .lb-grid>div{border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+  .lb h3{font-size:13px;font-weight:600;margin:10px 10px 4px;text-transform:uppercase;letter-spacing:.08em}
+  .lb table{font-size:12.5px} .lb th,.lb td{padding:6px 6px} .lb th{cursor:default}
+  .lb td a{text-decoration:none} .lb td a:hover{text-decoration:underline}
+  .xray.lb td button{font:500 11px Geist,system-ui,sans-serif;padding:2px 9px;border-radius:99px;background:transparent;color:var(--acc)}
+  #merank{margin:10px 0 0;max-width:none}
 </style>
 </head>
 <body>
@@ -82,6 +89,23 @@
     </div>
     <div class="presets" id="presets"></div>
     <div id="xray"></div>
+  </div>
+  <div class="xray lb" id="lb">
+    <div class="xray-head">
+      <h2 style="margin:0">Carry Leaderboard — who earns funding right now</h2>
+      <span class="live" id="lbstatus">scanning open positions…</span>
+    </div>
+    <div class="xray-row">
+      <input id="me" placeholder="0x… your wallet: find your rank" spellcheck="false" autocomplete="off">
+      <button id="mego">Your rank</button>
+      <button id="meshare" class="ghost">Share on X</button>
+    </div>
+    <p class="sub" id="merank"></p>
+    <div class="lb-grid">
+      <div><h3 class="pos">Top Harvesters</h3><table><thead><tr><th>#</th><th>Wallet</th><th>USDso/day</th><th>Notional</th><th>Legs</th><th>Net exp.</th><th>Biggest leg</th><th></th></tr></thead><tbody id="lbTop"></tbody></table></div>
+      <div><h3 class="neg">Top Bleeders</h3><table><thead><tr><th>#</th><th>Wallet</th><th>USDso/day</th><th>Notional</th><th>Legs</th><th>Net exp.</th><th>Biggest leg</th><th></th></tr></thead><tbody id="lbBot"></tbody></table></div>
+    </div>
+    <p class="sub" style="font-size:12px;margin-top:8px">Aggregates the ~2,000 most recently updated open perp positions. Funding/day = −side × 8h rate × notional × 3, at the live mid. Net exp. = long − short notional. Click a wallet to X-Ray it. Refreshes every 60 s.</p>
   </div>
   <section><table><thead><tr id="head"></tr></thead><tbody id="rows"></tbody></table></section>
   <footer>
@@ -154,7 +178,7 @@ function render(){
     const sp=r.spreadBps==null?"–":(r.crossed?`<span class="pill neg">CROSSED ${r.spreadBps.toFixed(1)}</span>`:r.spreadBps.toFixed(1));
     const cls=r.oiPct>=95?"hot":r.oiPct>=70?"warm":"";
     return `<tr><td class="sym">${r.sym}</td><td>${fp(r.mid)}</td><td>${sp}</td><td class="${Math.abs(r.apr)>=0.15?(r.apr>0?"neg":"pos"):""}">${(r.apr*100).toFixed(1)}%</td><td>${r.oiPct.toFixed(1)}%<span class="bar ${cls}"><i style="width:${Math.min(100,r.oiPct)}%"></i></span></td><td>${Math.round(r.notionalOI).toLocaleString()}</td><td>${r.lev.toFixed(0)}x</td></tr>`}).join("");
-  document.querySelectorAll("th").forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1}render()});
+  document.querySelectorAll("#head th").forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1}render()});
 }
 // ---- Carry pair: best short-side carry + best long-side carry, both with OI headroom ----
 function renderCarry(){
@@ -218,6 +242,86 @@ const _origRender=render; render=function(){_origRender();renderCarry()};
 tick();setInterval(tick,15000);setInterval(()=>{markets=[]},600000);
 loadPresets();
 {const w=new URL(location.href).searchParams.get("wallet");if(w){document.getElementById("wallet").value=w;setTimeout(()=>xray(w),2500)}}
+// ---- Carry Leaderboard: aggregate recent open positions per wallet, same funding formula as X-Ray ----
+const ADDR=/^0x[0-9a-f]{40}$/;
+const esc=(s)=>String(s).replace(/[&<>"']/g,c=>`&#${c.charCodeAt(0)};`);
+const short=(a)=>`${a.slice(0,6)}…${a.slice(-4)}`;
+const usd=(v)=>`${v<0?"-":""}$${Math.round(Math.abs(v)).toLocaleString("en-US")}`;
+const usdC=(v)=>`${v<0?"-":""}$${new Intl.NumberFormat("en-US",{notation:"compact",maximumFractionDigits:2}).format(Math.abs(v))}`;
+const signed=(v)=>`${v>=0?"+":""}${v.toFixed(2)}`;
+const utc=(d)=>d.toISOString().slice(11,19);
+const PFIELDS="account size isLong market{ baseSymbol baseDecimals markPrice fundingRate fundingWindowSec }";
+let board={list:[],pos:0,at:null};
+function aggregate(ps){
+  const live=bySym(), page=Object.fromEntries(markets.map(m=>[m.baseSymbol,m])), acc={};
+  for(const p of ps){
+    if(!ADDR.test(p.account)||!p.market)continue;
+    const m={...(page[p.market.baseSymbol]||{}),...p.market};
+    const size=Number(p.size)/10**m.baseDecimals;
+    const mark=(live[m.baseSymbol]&&live[m.baseSymbol].mid)||Number(m.markPrice)/1e18;
+    const sgn=p.isLong?1:-1, notional=size*mark;
+    const ratePer8h=Number(m.fundingRate||0)/1e18*(28800/(Number(m.fundingWindowSec)||28800));
+    const a=acc[p.account]||(acc[p.account]={addr:p.account,fday:0,gross:0,net:0,legs:0,big:null});
+    a.fday+=-sgn*ratePer8h*notional*3; a.gross+=notional; a.net+=sgn*notional; a.legs++;
+    if(!a.big||notional>a.big.n)a.big={n:notional,txt:`${m.baseSymbol} ${p.isLong?"long":"short"}`};
+  }
+  return Object.values(acc).sort((x,y)=>y.fday-x.fday);
+}
+function renderBoard(){
+  const L=board.list;
+  const row=(a,i)=>`<tr><td>${i}</td><td><a href="?wallet=${a.addr}" data-w="${a.addr}">${short(a.addr)}</a></td><td class="${a.fday>=0?"pos":"neg"}">${signed(a.fday)}</td><td>${usdC(a.gross)}</td><td>${a.legs}</td><td>${usdC(a.net)}</td><td>${a.big?esc(a.big.txt):"–"}</td><td><button data-s="${a.addr}">Share</button></td></tr>`;
+  const empty='<tr><td colspan="8" style="text-align:left;color:var(--mute)">No wallets on this side right now.</td></tr>';
+  const top=L.filter(a=>a.fday>0).slice(0,10), bot=L.filter(a=>a.fday<0).slice(-10).reverse();
+  document.getElementById("lbTop").innerHTML=top.map((a,i)=>row(a,i+1)).join("")||empty;
+  document.getElementById("lbBot").innerHTML=bot.map((a,i)=>row(a,i+1)).join("")||empty;
+}
+async function scan(){
+  const st=document.getElementById("lbstatus");
+  try{
+    const pages=await Promise.all([0,500,1000,1500].map(o=>gql(`{ PerpPosition(where:{size:{_neq:"0"}}, order_by:{updatedAtBlock:desc}, limit:500, offset:${o}){ ${PFIELDS} } }`)));
+    const ps=pages.flatMap(d=>{if(!d||!Array.isArray(d.PerpPosition))throw new Error("indexer");return d.PerpPosition});
+    board={list:aggregate(ps),pos:ps.length,at:new Date()};
+    renderBoard();
+    st.textContent=`scanned ${board.list.length.toLocaleString("en-US")} wallets / ${ps.length.toLocaleString("en-US")} positions, updated ${utc(board.at)} UTC`;
+    const me=document.getElementById("me"), w=new URL(location.href).searchParams.get("wallet");
+    if(!me.value&&w&&ADDR.test(w.toLowerCase())){me.value=w;myRank()}
+  }catch(e){st.innerHTML=`<span class="warn">Indexer error${board.at?`, showing data from ${utc(board.at)} UTC`:""}. Retrying in 60 s.</span>`}
+}
+const rankIn=(addr,fday)=>{const others=board.list.filter(x=>x.addr!==addr);return {rank:1+others.filter(x=>x.fday>fday).length,M:others.length+1}};
+function shareRank(addr,fday,rank,M,mine){
+  const url=`${location.origin}${location.pathname}?wallet=${addr}`;
+  const who=mine?"My dreamDEX Arena wallet":`dreamDEX Arena wallet ${short(addr)}`;
+  const text=`${who} ${fday>=0?"earns":"pays"} ${Math.abs(fday).toFixed(2)} USDso/day in funding (rank #${rank} of ${M}) — check yours: ${url} @DreamDEXSomnia`;
+  window.open("https://x.com/intent/post?text="+encodeURIComponent(text),"_blank","noopener");
+}
+async function myRank(){
+  const out=document.getElementById("merank"), addr=document.getElementById("me").value.trim().toLowerCase();
+  window._me=null;
+  if(!ADDR.test(addr)){out.textContent="Enter a valid 0x address.";return}
+  if(!board.at){out.textContent="Leaderboard still loading, try again in a few seconds.";return}
+  out.textContent="Reading your positions…";
+  try{
+    const d=await gql(`{ PerpPosition(where:{account:{_eq:"${addr}"}, size:{_neq:"0"}}, limit:100){ ${PFIELDS} } }`);
+    if(!d||!Array.isArray(d.PerpPosition))throw new Error("indexer");
+    const a=aggregate(d.PerpPosition)[0]||{fday:0,gross:0,legs:0};
+    const {rank,M}=rankIn(addr,a.fday), pct=rank/M*100;
+    window._me={addr,fday:a.fday,rank,M};
+    out.innerHTML=`<b>${short(addr)}</b>: <b class="${a.fday>=0?"pos":"neg"}">${signed(a.fday)} USDso/day</b> · rank <b>#${rank.toLocaleString("en-US")}</b> of ${M.toLocaleString("en-US")} scanned wallets (top ${pct<1?pct.toFixed(2):pct.toFixed(0)}%) · ${a.legs?`${a.legs} leg${a.legs>1?"s":""}, ${usd(a.gross)} notional`:"no open perp positions"}`;
+  }catch(e){out.textContent="Indexer unreachable, try again."}
+}
+document.getElementById("mego").onclick=myRank;
+document.getElementById("me").addEventListener("keydown",e=>{if(e.key==="Enter")myRank()});
+document.getElementById("meshare").onclick=async()=>{
+  const addr=document.getElementById("me").value.trim().toLowerCase();
+  if(!window._me||window._me.addr!==addr)await myRank();
+  const m=window._me; if(m)shareRank(m.addr,m.fday,m.rank,m.M,true);
+};
+document.getElementById("lb").addEventListener("click",e=>{
+  const a=e.target.closest("a[data-w]"), b=e.target.closest("button[data-s]");
+  if(a&&!(e.metaKey||e.ctrlKey||e.shiftKey||e.button)){e.preventDefault();document.getElementById("wallet").value=a.dataset.w;xray(a.dataset.w);document.querySelector(".xray").scrollIntoView({behavior:"smooth"})}
+  if(b){const x=board.list.find(r=>r.addr===b.dataset.s);if(x){const {rank,M}=rankIn(x.addr,x.fday);shareRank(x.addr,x.fday,rank,M,false)}}
+});
+setTimeout(scan,2500);setInterval(scan,60000);
 </script>
 </body>
 </html>
