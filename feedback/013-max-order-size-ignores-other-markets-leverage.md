@@ -97,4 +97,7 @@ In `readPerpPlacementState`, also read `getMaxLeverage(account, p)` and the heal
 Outputs above. `013-repro.mts` is in this folder.
 
 ## Environment
-@somnia-chain/markets-sdk 0.32.1, Node 22, Somnia Tokyo testnet (chain 50383), MarginBank 0x478769E1177C0773c43A593DCCc4Ad15F15F1394, RPC https://api.hideki2.infra.testnet.somnia.network, indexer https://hideki-dev.smk.somnia.host/v1/graphql. Read-only: orders are simulated with `eth_call` only, nothing is signed or broadcast.
+- SDK: @somnia-chain/markets-sdk 0.32.1
+- Network: Somnia Tokyo testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network)
+- Wallet: n/a (read-only repro, no account needed)
+- Other: Node 22, MarginBank 0x478769E1177C0773c43A593DCCc4Ad15F15F1394, indexer https://hideki-dev.smk.somnia.host/v1/graphql. Read-only: orders are simulated with `eth_call` only, nothing is signed or broadcast.
