@@ -5,8 +5,10 @@ Area: SDK
 
 > Note: the perps docs already warn that `SOMNIA_HIDEKI_TESTNET_ADDRESSES.collateral` is a different token (Common pitfalls). This item is about the SDK surfaces that still expose that token with no warning: `getSystemInfo().usdc` and `faucet()`. Neither is mentioned in the pitfall.
 ## Environment
-Somnia Hideki testnet (chain 50383), RPC `https://api.hideki2.infra.testnet.somnia.network`, Node 22, tsx
-
+- SDK: @somnia-chain/markets-sdk 0.32.1
+- Network: Somnia Tokyo testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network)
+- Wallet: n/a (read-only repro, no account needed)
+- Other: Node 22, tsx.
 ## Summary
 The perps testnet docs list **Collateral = `0xed7993A74dAe1e6656B704A424DcD8711aAf4F72` (USDso, 18 decimals)**, and the MarginBank agrees.
 The SDK preset ships `collateral = 0x9E9492cC533E8696A3b6afC7df730800DF75148f` (**tUSDC, 6 decimals**). Every SDK helper that reads `addresses.collateral` therefore reports the wrong token for perps.
@@ -37,4 +39,15 @@ A bot that formats balances or sizes orders using the system info's 6 decimals i
 - Add one line to the docs: "perps margin = USDso (18 decimals); `faucet()` is for binary markets (tUSDC)."
 
 ## Evidence
-Read-only probes: `probe2.ts` and `probe3.ts` in this folder; outputs are quoted above.
+- Repro script: `001-repro.mts` in this folder (read-only: view calls only, no key, nothing signed or sent). Run with `npx tsx 001-repro.mts` from a project with `@somnia-chain/markets-sdk@0.32.1`, `viem` and `tsx` installed. It replaces the ad-hoc probes we first used, which were never committed here.
+- Output, 2026-10-20:
+```
+chainId 50383
+SDK preset addresses.collateral : 0x9E9492cC533E8696A3b6afC7df730800DF75148f tUSDC 6 decimals
+docs perps Collateral          : 0xed7993A74dAe1e6656B704A424DcD8711aAf4F72 USDso 18 decimals
+getSystemInfo().usdc           : {"symbol":"tUSDC","decimals":6}
+getPerpSystemConfig(MarginBank).collateralToken: 0xed7993A74dAe1e6656B704A424DcD8711aAf4F72 USDso 18 decimals
+faucet() token resolution (src/testnet.ts:32): const testUsdc = p.testUsdc ?? a.collateral ?? a.testUsdc;
+=> faucet() with the preset mints: 0x9E9492cC533E8696A3b6afC7df730800DF75148f tUSDC 6 decimals
+```
+- `depositMargin` resolving the token from the bank: `w.bankCollateral(bank, p.collateral)` at `src/perp/margin.ts:1480` of the published 0.32.1 package.
