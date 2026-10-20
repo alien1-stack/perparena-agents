@@ -77,4 +77,7 @@ Make `getWithdrawableCollateral` return what `withdraw()` enforces: `max(0, min(
 - Repro script: `018-repro.mts` in this folder (read-only: `eth_call`, `eth_getLogs` and indexer queries; it signs nothing). Run with `npx tsx 018-repro.mts` from a project with `@somnia-chain/markets-sdk@0.32.1` installed. The output under **Actual** comes from two separate runs.
 
 ## Environment
-@somnia-chain/markets-sdk 0.32.1, Node 22, Somnia Tokyo testnet (chain 50383), RPC https://api.hideki2.infra.testnet.somnia.network, indexer https://hideki-dev.smk.somnia.host/v1/graphql, MarginBank 0x478769E1177C0773c43A593DCCc4Ad15F15F1394, read-only (no wallet, no transactions).
+- SDK: @somnia-chain/markets-sdk 0.32.1
+- Network: Somnia Tokyo testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network)
+- Wallet: n/a (read-only repro, no account needed)
+- Other: Node 22, indexer https://hideki-dev.smk.somnia.host/v1/graphql, MarginBank 0x478769E1177C0773c43A593DCCc4Ad15F15F1394, read-only (no wallet, no transactions).
