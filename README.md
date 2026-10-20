@@ -92,6 +92,8 @@ _Transaction hashes are added here as the bot trades._
 1. Perps Radar launch: https://x.com/day1onearth/status/2112521157538717800
 2. Crossed books at the OI cap: https://x.com/day1onearth/status/2112521385775874107
 3. Arena Autopilot funding legs: https://x.com/day1onearth/status/2112521486552465788
+4. Wallet X-Ray + carry banner: https://x.com/day1onearth/status/2112552314288693731
+5. Somnia Agents risk officer: https://x.com/day1onearth/status/2112552086151778495
 
 ## Credits
 
