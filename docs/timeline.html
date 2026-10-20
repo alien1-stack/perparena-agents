@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision Timeline</title>
+<meta name="description" content="Every Arena Autopilot tick as an auditable card: inputs, Somnia Agents risk-officer verdict, deterministic gates, the action taken or refused, and on-chain tx hashes you can verify in the browser.">
+<meta property="og:title" content="Arena Autopilot: verifiable decision timeline">
+<meta property="og:description" content="Every tick, every gate, every refusal and every tx hash, verifiable against Somnia RPC from your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f6f5fb;--ink:#15122b;--mute:#6b6688;--card:#fff;--line:#e4e1f0;--pos:#0f8a5f;--neg:#c2364b;--warn:#b7791f;--acc:#5b4bff;--track:#ece9f7;--soft:#f1effa}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0b0a14;--ink:#f3f0ff;--mute:#9a95b8;--card:#15132a;--line:#262347;--pos:#3ddc97;--neg:#ff6b81;--warn:#f6c25b;--acc:#a99cff;--track:#221f3d;--soft:#1b1834}}
+  :root[data-theme="dark"]{--bg:#0b0a14;--ink:#f3f0ff;--mute:#9a95b8;--card:#15132a;--line:#262347;--pos:#3ddc97;--neg:#ff6b81;--warn:#f6c25b;--acc:#a99cff;--track:#221f3d;--soft:#1b1834}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Geist,system-ui,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 64px}
+  a{color:var(--acc)}
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:end;justify-content:space-between;margin-bottom:16px}
+  h1{font-size:clamp(28px,5vw,40px);margin:0;letter-spacing:-.02em}
+  .sub{color:var(--mute);margin:4px 0 0;max-width:720px}
+  .nav{font-size:13px;display:flex;flex-wrap:wrap;gap:4px 12px}
+  .mono,code{font-family:"Geist Mono",monospace}
+  .live{font-family:"Geist Mono",monospace;font-size:12px;color:var(--mute)}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--pos);margin-right:6px;animation:p 1.6s infinite}
+  .dot.off{background:var(--warn);animation:none}
+  @keyframes p{50%{opacity:.3}}
+  .tele{display:flex;flex-wrap:wrap;gap:6px 18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:14px}
+  .tele>span{min-width:0;overflow-wrap:anywhere}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .kpi b{display:block;font:500 22px "Geist Mono",monospace}
+  .kpi>span{color:var(--mute);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+  .kpi small{display:block;color:var(--mute);font-size:12px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 auto}
+  button{font:500 13px Geist,system-ui,sans-serif;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+  button:hover{border-color:var(--acc)}
+  button[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
+  button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+  button.sm{font-size:11.5px;padding:2px 9px}
+  .how{color:var(--mute);font-size:13px;margin:0 0 18px}
+  ol.tl{list-style:none;margin:0;padding:0 0 0 22px;position:relative}
+  ol.tl:before{content:"";position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:var(--line)}
+  ol.tl>li{position:relative;margin:0 0 14px}
+  .node{position:absolute;left:-22px;top:18px;width:14px;height:14px;border-radius:50%;background:var(--card);border:3px solid var(--mute)}
+  li.o-traded .node{border-color:var(--pos)} li.o-refused .node,li.o-error .node{border-color:var(--neg)} li.o-held .node{border-color:var(--acc)} li.o-dry .node{border-color:var(--warn)} li.o-agent .node{border-color:var(--acc);background:var(--acc)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-width:0}
+  li:target .card{outline:2px solid var(--acc)}
+  .ch{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+  .ch time{font:500 13px "Geist Mono",monospace}
+  .badge{font:600 11px Geist,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;border:1px solid currentColor}
+  .b-live{color:var(--pos)} .b-dry{color:var(--warn)} .b-traded{color:var(--pos)} .b-refused{color:var(--neg)} .b-held{color:var(--acc)} .b-error{color:var(--neg)} .b-agent{color:var(--acc)} .b-hist{color:var(--mute)}
+  .b-approve{color:var(--pos)} .b-reject{color:var(--neg)}
+  .perma{margin-left:auto;font-size:12px;text-decoration:none;color:var(--mute)}
+  .headline{margin:6px 0 10px;font-weight:500}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px}
+  .blk{border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .blk h4{margin:0 0 6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
+  .blk.wide{grid-column:1/-1}
+  .leg{font-size:13.5px;margin:2px 0}
+  .muted{color:var(--mute)}
+  .small{font-size:12.5px}
+  .pos{color:var(--pos)} .neg{color:var(--neg)} .warn{color:var(--warn)}
+  .gate{display:grid;grid-template-columns:auto 1fr auto;gap:2px 8px;font-size:12.5px;padding:3px 0;border-bottom:1px dashed var(--line);align-items:baseline}
+  .gate:last-child{border-bottom:0}
+  .gate .g{font-weight:600}
+  .gate .v{color:var(--mute);min-width:0;overflow-wrap:anywhere}
+  .gate .r{font:600 10.5px "Geist Mono",monospace;letter-spacing:.04em}
+  .r.pass{color:var(--pos)} .r.fail{color:var(--neg)} .r.warn{color:var(--warn)} .r.na{color:var(--mute)}
+  .act{font-size:13.5px;padding:6px 0;border-bottom:1px dashed var(--line)}
+  .act:last-child{border-bottom:0}
+  .act .k{font:600 11px "Geist Mono",monospace;letter-spacing:.04em;margin-right:6px}
+  .k.trade{color:var(--pos)} .k.hold{color:var(--acc)} .k.refuse{color:var(--neg)} .k.dry{color:var(--warn)}
+  .note{font-size:12.5px;color:var(--mute);margin-top:3px}
+  .flag{font-size:12.5px;margin-top:6px;padding:6px 8px;border-radius:8px;background:var(--soft);border-left:3px solid var(--warn)}
+  .tx{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;margin-top:4px}
+  .tx code{font-size:12px;color:var(--acc);overflow-wrap:anywhere}
+  .chain{font:600 10.5px Geist,system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+  .vout{flex-basis:100%;font-size:12.5px;min-width:0}
+  .vout .ok{color:var(--pos);font-weight:600} .vout .bad{color:var(--neg);font-weight:600}
+  pre{margin:4px 0 0;padding:8px 10px;border-radius:8px;background:var(--soft);font:11.5px/1.45 "Geist Mono",monospace;overflow-x:auto;max-width:100%;white-space:pre}
+  blockquote{margin:6px 0;padding:4px 10px;border-left:3px solid var(--line);font-size:13.5px}
+  .empty{color:var(--mute);padding:12px;background:var(--card);border:1px dashed var(--line);border-radius:14px}
+  footer{color:var(--mute);font-size:13px;margin-top:24px;line-height:1.6}
+  @media (max-width:520px){.perma{margin-left:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Verifiable Decision Timeline</h1>
+      <p class="sub">Every tick Arena Autopilot ran: what it saw, the Somnia Agents risk-officer verdict, the deterministic gates it checked, what it did or <b>refused</b> to do, and the on-chain proof. Read straight from <code>journal/*.jsonl</code>. Each tx can be checked against Somnia RPC from this page.</p>
+    </div>
+    <nav class="nav"><a href="judge.html">Judge mode</a><a href="radar.html">Live radar</a><a href="index.html">Bot dashboard</a><a href="https://github.com/alien1-stack/perparena-agents">Repo</a></nav>
+  </header>
+
+  <div class="tele live" id="tele"><span><span class="dot off" id="rpcdot"></span><span id="rpc">Tokyo RPC: connecting…</span></span><span id="bot">bot: loading…</span><span id="src">journal: loading…</span></div>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="toolbar">
+    <div class="chips" id="chips"></div>
+    <button id="verifyAll" class="pri">Verify all txs on-chain</button>
+    <button id="csv">Export txs (CSV)</button>
+    <button id="json">Export log (JSON)</button>
+  </div>
+  <p class="how">How to read a card: <b>1 Inputs</b> is the target book the bot computed from live funding. <b>2 Risk officer</b> is the Somnia Agents LLM verdict (validator consensus on Shannon) when it was asked. <b>3 Gates</b> are the hard-coded rules (no AI): entry APR, net cap, max legs, stop-loss, exit APR, cooldown. <b>4 Action</b> is what the bot did, including what it decided <i>not</i> to do. Somnia Tokyo (chain 50383) has no public explorer, so <b>Verify</b> calls <code>eth_getTransactionReceipt</code> on its RPC directly.</p>
+
+  <ol class="tl" id="tl"><li class="empty">Loading the journal…</li></ol>
+
+  <footer>Sources: <code>journal/YYYY-MM-DD.jsonl</code> (last 3 days, local copy first, then GitHub), <a href="data.json">data.json</a>, <a href="trades.json">trades.json</a>. Somnia Agents calls 1–3 are the live Shannon calls documented in the README; the bot ran them before the risk officer was wired into the journal. Testnet paper money, not financial advice.</footer>
+</div>
+<script>
+const REPO="https://github.com/alien1-stack/perparena-agents";
+const RAW="https://raw.githubusercontent.com/alien1-stack/perparena-agents/main/";
+const TOKYO={name:"Somnia Tokyo",id:50383,rpc:"https://api.hideki2.infra.testnet.somnia.network"};
+const SHANNON={name:"Somnia Shannon",id:50312,rpc:"https://api.infra.testnet.somnia.network",tx:"https://shannon-explorer.somnia.network/tx/"};
+const AGENTS="0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776";
+const RECEIPTS=id=>`https://receipts.testnet.agents.somnia.host/agent-receipts?contractAddress=${AGENTS}&type=minimal&requestId=${id}`;
+const BOT_KEY="0x775275ef512e1af016ff6d9df4aa45861670bb47";
+const JOURNAL_START="2026-10-20"; // first day the bot journaled; earlier days are never requested
+let P={LEG_NOTIONAL:100,MAX_LEGS:4,NET_CAP:150,MIN_APR:.15,EXIT_APR:.05,STOP_LOSS_PCT:4,COOLDOWN_H:12};
+
+// Live Somnia Agents calls from README.md (Shannon testnet, 2026-10-20). Answers are the exact
+// consensus strings decoded from each submitResponse tx; "Decode on-chain" re-reads them.
+const AGENT_HISTORY=[
+  {n:1,t:"2026-10-20T13:21:54Z",prompt:"old free-text prompt",book:["short BTC-PERP 100 USDso at +180% APR","long LIT-PERP 100 USDso at −42% APR","net exposure 0"],verdict:"REJECT",answer:"REJECT: High risk of adverse price movement due to lack of net exposure hedging.",requestId:"17364447",requestTx:"0xf4d2231b4829a6515ced393d75590ae9fd54fe83fff39e4d7d327b319b62fc7d",resultTx:"0xefbbd6c3247affb208417bab357a457b28ce4ae1dcd2deeef682fed68db88cd1",lesson:"The reason is wrong: the book is hedged (net 0). This refusal stays public on purpose. It is why the prompt now passes structured, pre-computed facts and a numbered policy."},
+  {n:2,t:"2026-10-20T13:30:37Z",prompt:"structured facts, --example good",book:["short BTC-PERP 100 at +180% APR (receives funding)","long LIT-PERP 100 at −42% APR (receives funding)","net 0 · equity 500 · gross 0.40x","max loss 8 USDso (1.6% of equity) · within pool headroom"],verdict:"APPROVE",answer:"APPROVE: All conditions are met: net exposure 0.0% ≤ 10%, both legs receive funding with positive expected net funding 0.61 USDso/day, max loss 1.6% ≤ 5%, gross leverage 0.40x ≤ 3x, and all legs fit within pool headroom.",requestId:"17364977",requestTx:"0x860c0bb1e8a10fe1d83abc2928ab91695b78f920a5bcb5ee8e2f12cb6ca55efb",resultTx:"0x383ecd66486fe8d04ee4658cbbabb1e753e9820c8ea42da5266165b29cb88ff6"},
+  {n:3,t:"2026-10-20T13:31:09Z",prompt:"structured facts, --example bad",book:["long BTC-PERP 2000 at +180% APR (pays funding)","equity 100 · 20x net long","max loss 80 USDso (80% of equity)","over the 1500 USDso pool headroom"],verdict:"REJECT",answer:"REJECT: all legs within pool headroom: NO",requestId:"17365010",requestTx:"0xa369d2dd5db9a21e857f1f9e6000d56134122dc91347cde84ba47cc0653cd506",resultTx:"0x1ef58cf47b7f438ca71281bd7a279874a3eab086489a8bcc12e2820d60b080a9"}
+];
+
+// ---------- helpers ----------
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>`&#${c.charCodeAt(0)};`);
+const sym=s=>String(s||"").split("/")[0];
+const fmt=(n,d=2)=>n==null||isNaN(n)?"–":Number(n).toLocaleString("en-US",{maximumFractionDigits:d,minimumFractionDigits:d});
+const pctS=(a,d=1)=>`${a>=0?"+":"−"}${Math.abs(a*100).toFixed(d)}%`;
+const utc=t=>new Date(t).toISOString().replace("T"," ").slice(0,19)+" UTC";
+const hhmm=t=>new Date(t).toISOString().slice(11,16);
+const shortH=h=>`${h.slice(0,10)}…${h.slice(-8)}`;
+const shortA=a=>`${a.slice(0,6)}…${a.slice(-4)}`;
+const ago=t=>{const m=Math.round((Date.now()-Date.parse(t))/60000);return m<1?"just now":m<90?`${m} min ago`:m<2880?`${Math.round(m/60)} h ago`:`${Math.round(m/1440)} d ago`};
+const paidTo=apr=>apr>0?"paid to shorts":"paid to longs";
+let rid=1;
+async function rpc(url,calls){
+  const body=calls.map(([method,params])=>({jsonrpc:"2.0",id:rid++,method,params}));
+  const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  const out=await r.json(); const by=new Map(out.map(x=>[x.id,x]));
+  return body.map(b=>{const x=by.get(b.id);if(!x||x.error)throw new Error(x?.error?.message||"no result");return x.result});
+}
+async function getText(path){
+  // GitHub Pages copies of docs/ cannot see ../journal, so go to GitHub first there.
+  const order=/github\.io$/.test(location.hostname)?[RAW+path,"../"+path]:["../"+path,RAW+path];
+  for(const u of order){try{const r=await fetch(u,{cache:"no-store"});if(r.ok)return {text:await r.text(),src:u.startsWith("http")?"GitHub":"local"}}catch(e){}}
+  return null;
+}
+async function getJson(p){try{const r=await fetch(p,{cache:"no-store"});if(r.ok)return await r.json()}catch(e){}return null}
+
+// ---------- load + group ----------
+let DATA=null,GROUPS=[],TXS=[],filter="all";
+async function load(){
+  DATA=await getJson("data.json");
+  if(DATA?.params)P={...P,...DATA.params};
+  const anchors=[new Date(),DATA?.updatedAt?new Date(DATA.updatedAt):null].filter(Boolean);
+  const days=[...new Set(anchors.flatMap(a=>[0,1,2].map(d=>new Date(a.getTime()-d*86400000).toISOString().slice(0,10))))].filter(d=>d>=JOURNAL_START).sort();
+  const files=await Promise.all(days.map(d=>getText(`journal/${d}.jsonl`).then(x=>x&&{day:d,...x})));
+  const got=files.filter(Boolean);
+  const events=[];
+  for(const f of got)for(const line of f.text.split("\n")){if(!line.trim())continue;try{events.push(JSON.parse(line))}catch(e){}}
+  $("src").textContent=got.length?`journal: ${events.length} events · ${got.map(f=>f.day).join(", ")} (${[...new Set(got.map(f=>f.src))].join("+")})`:"journal: no day file found for the last 3 days";
+  GROUPS=group(events);
+  const seen=new Set(events.filter(e=>e.kind==="somnia-agent").map(e=>e.requestTx));
+  for(const h of AGENT_HISTORY)if(!seen.has(h.requestTx))GROUPS.push({t:h.t,agentHistory:h,events:[]});
+  GROUPS.sort((a,b)=>Date.parse(b.t)-Date.parse(a.t));
+  priceIndex(events);
+  GROUPS.forEach(analyse);
+  collectTxs();
+  renderTele();renderKpis();renderChips();render();
+  if(location.hash){const el=document.querySelector(location.hash);if(el)el.scrollIntoView()}
+}
+function group(events){
+  const groups=[];let cur=null;
+  for(const e of events){
+    if(e.kind==="tick"){cur={t:e.t,tick:e,events:[]};groups.push(cur);continue}
+    // Events stamped well before the open tick were backfilled later: give them their own card.
+    if(!cur||Date.parse(e.t)<Date.parse(cur.t)-5000){
+      let g=groups.find(x=>x.backfill&&x.t===e.t);
+      if(!g){g={t:e.t,tick:null,backfill:true,events:[]};groups.push(g)}
+      g.events.push(e);continue;
+    }
+    cur.events.push(e);
+  }
+  return groups;
+}
+let PX={};
+function priceIndex(events){
+  PX={};
+  const add=(s,t,p)=>{if(!s||!p)return;(PX[s]=PX[s]||[]).push([Date.parse(t),p])};
+  for(const e of events)add(e.symbol,e.t,e.entry||e.price);
+  for(const f of DATA?.funding||[])add(f.symbol,DATA.updatedAt,f.mark);
+}
+const refPx=(s,t)=>{const L=PX[s];if(!L)return null;const T=Date.parse(t);return L.reduce((b,x)=>!b||Math.abs(x[0]-T)<Math.abs(b[0]-T)?x:b,null)[1]};
+function parseLeg(s){const m=/^(long|short)\s+(\S+)\s+(-?[\d.]+)%$/.exec(s);return m?{side:m[1],symbol:m[2],apr:Number(m[3])/100}:null}
+
+function analyse(g){
+  if(g.agentHistory){g.outcome="agent";return}
+  const E=g.events,by=k=>E.filter(e=>e.kind===k);
+  const target=by("target")[0];
+  g.target=target;g.legs=target?(target.legs||[]).map(parseLeg).filter(Boolean):[];
+  g.trades=by("trade");g.dry=by("dry-run");g.holds=by("hold");g.cool=by("cooldown");
+  g.skips=E.filter(e=>["skip","skip-entries","no-fill"].includes(e.kind));
+  g.errors=E.filter(e=>e.kind==="error"||e.kind==="somnia-agent-error");
+  g.agent=by("somnia-agent")[0];g.advisory=by("advisory")[0];
+  g.live=g.tick?g.tick.live:g.trades.length>0;
+  const rejected=g.agent&&g.agent.verdict!=="APPROVE";
+  g.outcome=g.errors.length?"error":g.trades.length?"traded":g.dry.length?"dry":(g.skips.length||g.cool.length||rejected)?"refused":g.holds.length?"held":"held";
+  // same-tick churn: a stop-loss close followed by a re-open of the same market
+  const stops=g.trades.filter(x=>/^close \(stop-loss/.test(x.why||""));
+  g.churn=stops.filter(s=>g.trades.some(o=>o!==s&&o.symbol===s.symbol&&/^open/.test(o.why||"")&&Date.parse(o.t)>=Date.parse(s.t))).map(s=>sym(s.symbol));
+  g.stops=stops;
+}
+function headline(g){
+  if(g.agentHistory){const h=g.agentHistory;return `Somnia Agents risk officer call #${h.n}: ${h.verdict==="APPROVE"?"approved":"refused"} the book (${h.prompt}).`}
+  const opens=[...g.trades,...g.dry].filter(x=>/^open/.test(x.why||""));
+  const parts=[];
+  if(g.stops.length)parts.push(`Stop-loss fired on ${g.stops.map(s=>`${sym(s.symbol)} (${(/(-?[\d.]+)%/.exec(s.why)||[])[1]}%)`).join(", ")}`);
+  if(g.churn.length)parts.push(`re-opened ${g.churn.join(", ")} in the same tick`);
+  else if(g.trades.length&&opens.length)parts.push(`opened ${opens.map(o=>`${o.side} ${sym(o.symbol)}`).join(" + ")} on-chain`);
+  if(g.dry.length)parts.push(`would open ${g.dry.map(o=>`${o.side} ${sym(o.symbol)}`).join(" + ")} (dry run, nothing sent)`);
+  if(g.cool.length)parts.push(`refused re-entry into ${g.cool.map(c=>sym(c.symbol)).join(", ")} (cooldown)`);
+  if(g.skips.length)parts.push(`skipped ${g.skips.length} order${g.skips.length>1?"s":""}`);
+  if(!parts.length&&g.holds.length)parts.push(`Held ${g.holds.map(h=>`${h.side} ${sym(h.symbol)}`).join(" + ")}: no gate triggered, so no trade`);
+  if(g.backfill)parts.push("journal lines backfilled from the indexer after the tick crashed while logging");
+  const s=parts.join("; ");return s.charAt(0).toUpperCase()+s.slice(1)+".";
+}
+
+// ---------- gates ----------
+function gates(g){
+  const R=[];const row=(name,val,res,cls)=>R.push(`<div class="gate"><span class="g">${name}</span><span class="v">${val}</span><span class="r ${cls}">${res}</span></div>`);
+  if(g.legs.length){
+    const low=g.legs.filter(l=>Math.abs(l.apr)<P.MIN_APR);
+    row("Entry APR",`every target leg |APR| ≥ ${P.MIN_APR*100}% (lowest ${(Math.min(...g.legs.map(l=>Math.abs(l.apr)))*100).toFixed(1)}%)`,low.length?"FAIL":"PASS",low.length?"fail":"pass");
+    const net=g.target.net??0;
+    row("Net cap",`|net| ${Math.abs(net)} ≤ ${P.NET_CAP} USDso`,Math.abs(net)<=P.NET_CAP?"PASS":"FAIL",Math.abs(net)<=P.NET_CAP?"pass":"fail");
+    row("Max legs",`${g.legs.length} ≤ ${P.MAX_LEGS}`,g.legs.length<=P.MAX_LEGS?"PASS":"FAIL",g.legs.length<=P.MAX_LEGS?"pass":"fail");
+  } else if(g.backfill) row("Inputs","the target event of this tick was lost in the crash; fills recovered from the indexer","n/a","na");
+  for(const h of g.holds){
+    const px=refPx(h.symbol,h.t),n=px?h.contracts*px:null,pp=n?(h.uPnl/n)*100:null;
+    row(`Stop-loss ${sym(h.symbol)}`,pp==null?`uPnL ${fmt(h.uPnl)}`:`uPnL ≈ ${pp>=0?"+":""}${pp.toFixed(2)}% vs −${P.STOP_LOSS_PCT}% stop`,"PASS","pass");
+    const ok=Math.abs(h.apr)>=P.EXIT_APR;
+    row(`Exit APR ${sym(h.symbol)}`,`|${(h.apr*100).toFixed(1)}%| ≥ ${P.EXIT_APR*100}% exit floor`,ok?"PASS":"EXIT",ok?"pass":"fail");
+  }
+  for(const s of g.stops)row(`Stop-loss ${sym(s.symbol)}`,`${(/(-?[\d.]+%)/.exec(s.why)||[])[1]} ≤ −${P.STOP_LOSS_PCT}% → close`,"FIRED","fail");
+  if(g.cool.length)for(const c of g.cool)row(`Cooldown ${sym(c.symbol)}`,`stopped out within ${P.COOLDOWN_H} h → no re-entry until ${hhmm(c.until)} UTC`,"BLOCKED","fail");
+  else if(g.churn.length)row("Cooldown",`not in this build: ${g.churn.join(", ")} re-entered in the same tick. Added right after (${P.COOLDOWN_H} h, no same-tick re-entry)`,"MISSING","warn");
+  else{const entries=[...g.trades,...g.dry].filter(x=>/^open/.test(x.why||""));row("Cooldown",entries.length?`no stop-loss in the last ${P.COOLDOWN_H} h on ${entries.map(x=>sym(x.symbol)).join(", ")}`:"no new entries this tick",entries.length?"PASS":"n/a",entries.length?"pass":"na")}
+  if(g.agent)row("Risk officer",`${g.agent.mode}: ${g.agent.verdict}`,g.agent.verdict==="APPROVE"?"PASS":g.agent.mode==="gate"?"BLOCK":"ADVISE",g.agent.verdict==="APPROVE"?"pass":g.agent.mode==="gate"?"fail":"warn");
+  return R.join("")||'<span class="muted small">No gates evaluated.</span>';
+}
+
+// ---------- tx rendering + verification ----------
+function txLine(hash,chain,label){
+  const c=chain==="shannon"?SHANNON:TOKYO;
+  const link=chain==="shannon"?`<a href="${SHANNON.tx}${hash}" target="_blank" rel="noopener"><code title="${hash}">${shortH(hash)}</code></a>`:`<code title="${hash}">${shortH(hash)}</code>`;
+  return `<div class="tx" data-h="${hash}" data-c="${chain}">${label?`<span class="muted small">${label}</span>`:""}<span class="chain">${c.name.split(" ")[1]} ${c.id}</span>${link}<button class="sm" data-copy="${hash}">Copy</button><button class="sm" data-verify>Verify</button><button class="sm" data-curl>curl</button><div class="vout"></div></div>`;
+}
+const curlCmd=(h,c)=>`curl -s -X POST ${c.rpc} \\\n  -H 'content-type: application/json' \\\n  --data '{"jsonrpc":"2.0","id":1,"method":"eth_getTransactionReceipt","params":["${h}"]}'`;
+const VCACHE={};
+async function verifyTx(hash,chain){
+  const c=chain==="shannon"?SHANNON:TOKYO;
+  if(VCACHE[hash])return VCACHE[hash];
+  const [r]=await rpc(c.rpc,[["eth_getTransactionReceipt",[hash]]]);
+  if(!r)return VCACHE[hash]={found:false};
+  const [b]=await rpc(c.rpc,[["eth_getBlockByNumber",[r.blockNumber,false]]]);
+  let ts=parseInt(b.timestamp,16);if(ts>1e11)ts=Math.floor(ts/1000);
+  return VCACHE[hash]={found:true,ok:r.status==="0x1",block:parseInt(r.blockNumber,16),ts:ts*1000,from:r.from,to:r.to,logs:(r.logs||[]).length,gas:parseInt(r.gasUsed,16)};
+}
+function vHtml(v,hash,chain){
+  if(!v.found)return `<span class="bad">Not found</span> on ${chain==="shannon"?"Shannon":"Tokyo"} RPC.`;
+  const who=v.from.toLowerCase()===BOT_KEY?" (bot trading key)":"";
+  return `<span class="${v.ok?"ok":"bad"}">${v.ok?"✓ success":"✗ reverted"}</span> · block <span class="mono">${v.block.toLocaleString("en-US")}</span> · ${utc(v.ts)} · from <span class="mono">${shortA(v.from)}</span>${who} · to <span class="mono">${shortA(v.to||"0x")}</span> · ${v.logs} logs · gas ${v.gas.toLocaleString("en-US")}`;
+}
+async function runVerify(box){
+  const out=box.querySelector(".vout"),h=box.dataset.h,c=box.dataset.c;
+  out.innerHTML='<span class="muted">Calling eth_getTransactionReceipt…</span>';
+  try{const v=await verifyTx(h,c);out.innerHTML=vHtml(v,h,c);return v}
+  catch(e){out.innerHTML=`<span class="warn">RPC unreachable from this browser (${esc(e.message)}). Run it yourself:</span><pre>${esc(curlCmd(h,c==="shannon"?SHANNON:TOKYO))}</pre>`;return null}
+}
+// Decode the consensus string from a Shannon submitResponse(requestId, bytes result, ...) tx.
+function hexToBytes(h){h=h.replace(/^0x/,"");const a=new Uint8Array(h.length/2);for(let i=0;i<a.length;i++)a[i]=parseInt(h.substr(i*2,2),16);return a}
+const word=(a,o)=>{let n=0;for(let i=o;i<o+32;i++)n=n*256+a[i];return n};
+function decodeConsensus(input){
+  const a=hexToBytes(input).slice(4);
+  const off=word(a,32),len=word(a,off),b=a.slice(off+32,off+32+len);
+  const so=word(b,0),sl=word(b,so);
+  return {requestId:BigInt("0x"+[...a.slice(0,32)].map(x=>x.toString(16).padStart(2,"0")).join("")).toString(),text:new TextDecoder().decode(b.slice(so+32,so+32+sl))};
+}
+async function decodeAgent(btn){
+  const h=AGENT_HISTORY.find(x=>x.resultTx===btn.dataset.decode),out=btn.parentElement.querySelector(".dout");
+  out.innerHTML='<span class="muted">Reading submitResponse calldata from Shannon RPC…</span>';
+  try{
+    const [tx]=await rpc(SHANNON.rpc,[["eth_getTransactionByHash",[h.resultTx]]]);
+    const d=decodeConsensus(tx.input);
+    const same=d.text===h.answer&&d.requestId===h.requestId;
+    out.innerHTML=`<span class="${same?"ok":"bad"}">${same?"✓ matches":"✗ differs from"} the recorded answer</span> (request ${esc(d.requestId)}, decoded from chain):<blockquote>${esc(d.text)}</blockquote>`;
+  }catch(e){out.innerHTML=`<span class="warn">Shannon RPC unreachable (${esc(e.message)}). Open the consensus tx in the explorer instead.</span>`}
+}
+
+// ---------- render ----------
+function actions(g){
+  const A=[];
+  const ev=[...g.events].sort((a,b)=>Date.parse(a.t)-Date.parse(b.t));
+  for(const e of ev){
+    if(e.kind==="hold")A.push(`<div class="act"><span class="k hold">HOLD</span>${e.side} ${sym(e.symbol)} ${e.contracts} · uPnL <span class="${e.uPnl>=0?"pos":"neg"}">${fmt(e.uPnl)}</span> · funding ${pctS(e.apr)} ${paidTo(e.apr)}<div class="note">Refused to trade: leg is still in the target book and no exit gate fired.</div></div>`);
+    else if(e.kind==="trade")A.push(`<div class="act"><span class="k trade">TRADE</span>${/^close/.test(e.why)?`close ${e.side==="short"?"long":"short"} (${e.side} order)`:e.side} ${sym(e.symbol)} ${e.filled??e.quantity} @ ${fmt(e.entry??e.price,4)}<div class="note">${esc(e.why)}${e.block?` · block ${e.block.toLocaleString("en-US")}`:""}${e.orderId?` · order ${esc(e.orderId)}`:""}</div>${e.note?`<div class="note">Note: ${esc(e.note)}</div>`:""}${e.hash?txLine(e.hash,"tokyo"):""}</div>`);
+    else if(e.kind==="dry-run")A.push(`<div class="act"><span class="k dry">WOULD TRADE</span>${e.side} ${sym(e.symbol)} ${e.quantity} @ ${fmt(e.price,4)}<div class="note">${esc(e.why)} · DRY_RUN: sized against the live pool, nothing sent, no tx.</div></div>`);
+    else if(e.kind==="cooldown")A.push(`<div class="act"><span class="k refuse">REFUSED</span>re-entry into ${sym(e.symbol)}<div class="note">Stop-loss cooldown until ${utc(e.until)}.</div></div>`);
+    else if(e.kind==="skip"||e.kind==="no-fill")A.push(`<div class="act"><span class="k refuse">SKIPPED</span>${e.side||""} ${sym(e.symbol)}<div class="note">${esc(e.reason||e.error||e.kind)}</div></div>`);
+    else if(e.kind==="skip-entries")A.push(`<div class="act"><span class="k refuse">REFUSED</span>all new entries (${(e.legs||[]).map(sym).join(", ")})<div class="note">${esc(e.reason)}</div></div>`);
+    else if(e.kind==="advisory")A.push(`<div class="act"><span class="k dry">ADVISORY</span><div class="note">${esc(e.note)}</div></div>`);
+    else if(e.kind==="error"||e.kind==="somnia-agent-error")A.push(`<div class="act"><span class="k refuse">ERROR</span>${sym(e.symbol)}<div class="note">${esc(e.error)}</div></div>`);
+  }
+  if(g.churn.length)A.push(`<div class="flag">Found here: a stop-loss and a re-open of ${g.churn.join(", ")} in the same tick is churn risk. The bot now skips same-tick re-entry and enforces a ${P.COOLDOWN_H} h cooldown after any stop-loss.</div>`);
+  return A.join("")||'<span class="muted small">No action.</span>';
+}
+function agentBlock(g){
+  const a=g.agent;
+  if(!a)return `<span class="muted small">Not called this tick (<code>AUTOPILOT_SOMNIA_AGENT</code> off). Its live verdicts are the cards marked Somnia Agents.</span>`;
+  return `<span class="badge ${a.verdict==="APPROVE"?"b-approve":"b-reject"}">${esc(a.verdict)}</span> <span class="muted small">${esc(a.mode)} mode · request ${esc(a.requestId)}</span><blockquote>${esc(a.response||"")}</blockquote>${a.requestTx?txLine(a.requestTx,"shannon","request"):""}${a.resultTx?txLine(a.resultTx,"shannon","consensus"):""}${a.requestId?`<div class="small"><a href="${RECEIPTS(a.requestId)}" target="_blank" rel="noopener">validator receipts</a></div>`:""}`;
+}
+function card(g){
+  const id="t-"+g.t.replace(/[^0-9A-Za-z]/g,"");
+  if(g.agentHistory){
+    const h=g.agentHistory;
+    return `<li class="o-agent" id="${id}" data-f="agent"><div class="node"></div><article class="card"><div class="ch"><time>${utc(h.t)}</time><span class="badge b-agent">Somnia Agents</span><span class="badge ${h.verdict==="APPROVE"?"b-approve":"b-reject"}">${h.verdict}</span><span class="badge b-hist">from README · Shannon</span><a class="perma" href="#${id}">permalink</a></div>
+    <p class="headline">${headline(g)}</p>
+    <div class="grid"><div class="blk"><h4>1 · Book sent</h4>${h.book.map(b=>`<div class="leg">${esc(b)}</div>`).join("")}<div class="note">Prompt: ${esc(h.prompt)}. Qwen3-30B, 3-validator subcommittee, accepted at 2-of-3 agreement.</div></div>
+    <div class="blk"><h4>2 · Consensus answer</h4><blockquote>${esc(h.answer)}</blockquote>${h.lesson?`<div class="flag">${esc(h.lesson)}</div>`:""}<div style="margin-top:6px"><button class="sm" data-decode="${h.resultTx}">Decode answer on-chain</button><div class="vout dout small"></div></div></div>
+    <div class="blk wide"><h4>3 · Proof on Somnia Shannon (chain 50312)</h4>${txLine(h.requestTx,"shannon","createRequest")}${txLine(h.resultTx,"shannon","consensus")}<div class="small" style="margin-top:4px"><a href="${RECEIPTS(h.requestId)}" target="_blank" rel="noopener">Validator receipts for request ${h.requestId}</a></div></div></div></article></li>`;
+  }
+  const oc={traded:["b-traded","Traded"],refused:["b-refused","Refused"],held:["b-held","Held"],dry:["b-dry","Would trade"],error:["b-error","Error"]}[g.outcome];
+  const f=[g.outcome==="traded"?"trade":"",g.holds.length||g.outcome==="refused"?"refusal":"",g.outcome==="dry"?"dry":"",g.agent?"agent":""].join(" ");
+  const inputs=g.legs.length?g.legs.map(l=>`<div class="leg"><b>${l.side}</b> ${sym(l.symbol)} <span class="mono">${pctS(l.apr)}</span> <span class="muted small">${paidTo(l.apr)}</span></div>`).join("")+`<div class="note">net exposure ${g.target.net??0} USDso · ${g.tick?.markets??"?"} markets scanned · ${P.LEG_NOTIONAL} USDso per leg</div>`:`<span class="muted small">${g.backfill?"Target event not journaled (tick crashed after the fills).":"No target event."}</span>`;
+  return `<li class="o-${g.outcome}" id="${id}" data-f="${f}"><div class="node"></div><article class="card"><div class="ch"><time>${utc(g.t)}</time><span class="badge ${g.live?"b-live":"b-dry"}">${g.live?"Live":"Dry run"}</span><span class="badge ${oc[0]}">${oc[1]}</span>${g.backfill?'<span class="badge b-hist">backfilled</span>':""}<a class="perma" href="#${id}">permalink</a></div>
+  <p class="headline">${headline(g)}</p>
+  <div class="grid"><div class="blk"><h4>1 · Inputs: target book</h4>${inputs}</div>
+  <div class="blk"><h4>2 · Somnia Agents risk officer</h4>${agentBlock(g)}</div>
+  <div class="blk"><h4>3 · Deterministic gates</h4>${gates(g)}</div>
+  <div class="blk"><h4>4 · Action taken / refused</h4>${actions(g)}</div></div></article></li>`;
+}
+function render(){
+  const L=GROUPS.filter(g=>{if(filter==="all")return true;const f=g.agentHistory?"agent":[g.outcome==="traded"?"trade":"",g.holds.length||g.outcome==="refused"?"refusal":"",g.outcome==="dry"?"dry":"",g.agent?"agent":""].join(" ");return f.split(" ").includes(filter)});
+  $("tl").innerHTML=L.length?L.map(card).join(""):'<li class="empty">Nothing matches this filter.</li>';
+}
+function collectTxs(){
+  TXS=[];
+  for(const g of GROUPS){
+    if(g.agentHistory){const h=g.agentHistory;TXS.push({t:h.t,chain:"shannon",type:"somnia-agent createRequest",what:`call #${h.n} ${h.verdict}`,hash:h.requestTx},{t:h.t,chain:"shannon",type:"somnia-agent consensus",what:h.answer,hash:h.resultTx});continue}
+    for(const e of g.trades)if(e.hash)TXS.push({t:e.t,chain:"tokyo",type:"perp order",what:`${e.side} ${sym(e.symbol)} ${e.filled??e.quantity} @ ${e.entry??e.price} (${e.why})`,hash:e.hash});
+    if(g.agent){if(g.agent.requestTx)TXS.push({t:g.t,chain:"shannon",type:"somnia-agent createRequest",what:g.agent.verdict,hash:g.agent.requestTx});if(g.agent.resultTx)TXS.push({t:g.t,chain:"shannon",type:"somnia-agent consensus",what:g.agent.response||"",hash:g.agent.resultTx})}
+  }
+}
+function renderTele(){
+  if(DATA){$("bot").innerHTML=`bot: <b>${DATA.live?"LIVE":"dry run"}</b> · last tick ${hhmm(DATA.updatedAt)} UTC (${ago(DATA.updatedAt)}) · ${(DATA.positions||[]).length} legs open · equity ${fmt(DATA.margin?.equity)} USDso`}
+  else $("bot").textContent="bot: data.json unavailable";
+}
+function renderKpis(){
+  const T=GROUPS.filter(g=>!g.agentHistory);
+  const tokyo=TXS.filter(x=>x.chain==="tokyo").length;
+  const agents=GROUPS.filter(g=>g.agentHistory||g.agent);
+  const appr=agents.filter(g=>(g.agentHistory||g.agent).verdict==="APPROVE").length;
+  const holds=T.reduce((s,g)=>s+g.holds.length,0),refusals=T.reduce((s,g)=>s+g.cool.length+g.skips.length,0)+agents.filter(g=>(g.agentHistory||g.agent).verdict!=="APPROVE").length;
+  const k=[["Ticks journaled",T.filter(g=>g.tick).length,`${T.filter(g=>g.tick&&g.tick.live).length} live · ${T.filter(g=>g.tick&&!g.tick.live).length} dry run`],
+    ["Tokyo txs",`<span id="kv-tokyo">${tokyo}</span>`,'<span id="kv-tokyo-s">click Verify all to check</span>'],
+    ["Risk officer calls",agents.length,`${appr} approve · ${agents.length-appr} reject`],
+    ["Holds",holds,"kept a leg instead of trading"],
+    ["Refusals",refusals,"cooldown, skip or agent REJECT"],
+    ["Stop-losses",T.reduce((s,g)=>s+g.stops.length,0),`per-leg at −${P.STOP_LOSS_PCT}%`]];
+  $("kpis").innerHTML=k.map(([a,b,c])=>`<div class="kpi"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join("");
+}
+function renderChips(){
+  const C=[["all","All"],["trade","Trades"],["refusal","Holds & refusals"],["agent","Somnia Agents"],["dry","Dry runs"]];
+  $("chips").innerHTML=C.map(([k,l])=>`<button data-filter="${k}" aria-pressed="${k===filter}">${l}</button>`).join("");
+}
+function download(name,type,text){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.filter){filter=b.dataset.filter;renderChips();render();return}
+  if(b.dataset.copy){try{await navigator.clipboard.writeText(b.dataset.copy);b.textContent="Copied"}catch(err){b.textContent="Select + copy"}setTimeout(()=>b.textContent="Copy",1400);return}
+  if(b.hasAttribute("data-verify")){runVerify(b.closest(".tx"));return}
+  if(b.hasAttribute("data-curl")){const box=b.closest(".tx");box.querySelector(".vout").innerHTML=`<pre>${esc(curlCmd(box.dataset.h,box.dataset.c==="shannon"?SHANNON:TOKYO))}</pre>`;return}
+  if(b.dataset.decode){decodeAgent(b);return}
+});
+$("verifyAll").onclick=async()=>{
+  const btn=$("verifyAll");btn.disabled=true;btn.textContent="Verifying…";
+  filter="all";renderChips();render();
+  const boxes=[...document.querySelectorAll(".tx")];
+  const res=await Promise.all(boxes.map(runVerify));
+  const okT=new Set(boxes.filter((b,i)=>b.dataset.c==="tokyo"&&res[i]&&res[i].ok).map(b=>b.dataset.h)).size;
+  const allT=new Set(boxes.filter(b=>b.dataset.c==="tokyo").map(b=>b.dataset.h)).size;
+  const okAll=res.filter(v=>v&&v.ok).length;
+  btn.disabled=false;btn.textContent=`Verified ${okAll}/${boxes.length} txs`;
+  const s=$("kv-tokyo-s");if(s)s.innerHTML=`<span class="${okT===allT?"pos":"warn"}">${okT}/${allT} confirmed on chain ${TOKYO.id}</span>`;
+};
+$("csv").onclick=()=>{
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const rows=[["time_utc","chain","chain_id","type","what","tx_hash","check"]].concat(TXS.map(x=>[x.t,x.chain==="shannon"?"Somnia Shannon":"Somnia Tokyo",x.chain==="shannon"?SHANNON.id:TOKYO.id,x.type,x.what,x.hash,x.chain==="shannon"?SHANNON.tx+x.hash:`eth_getTransactionReceipt @ ${TOKYO.rpc}`]));
+  download("arena-autopilot-txs.csv","text/csv",rows.map(r=>r.map(q).join(",")).join("\n"));
+};
+$("json").onclick=()=>download("arena-autopilot-decisions.json","application/json",JSON.stringify(GROUPS.map(g=>g.agentHistory?{t:g.t,kind:"somnia-agent",...g.agentHistory}:{t:g.t,live:g.live,outcome:g.outcome,backfilled:!!g.backfill,target:g.target||null,events:g.events}),null,2));
+
+async function head(){
+  try{const [n]=await rpc(TOKYO.rpc,[["eth_blockNumber",[]]]);$("rpc").textContent=`Tokyo RPC live · chain ${TOKYO.id} · head #${parseInt(n,16).toLocaleString("en-US")} · ${new Date().toISOString().slice(11,19)} UTC`;$("rpcdot").className="dot"}
+  catch(e){$("rpc").textContent="Tokyo RPC unreachable, retrying";$("rpcdot").className="dot off"}
+}
+load();head();setInterval(head,15000);
+</script>
+</body>
+</html>
