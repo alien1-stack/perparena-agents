@@ -60,7 +60,17 @@ Add the two fragments to `liquidationEngineEventsAbi`, generated from `indexer/a
 
 ## Evidence
 - Repro script: `016-repro.mts` in this folder (read-only: `eth_call`, `eth_getLogs` and indexer queries; it signs nothing). Run with `npx tsx 016-repro.mts` from a project with `@somnia-chain/markets-sdk@0.32.1` installed. The output under **Actual** comes from two separate runs.
-- Transactions: `0x01e16a12552b1c110c6bda8454c7760188eb40fd5a3ff119d908a7c9579648f5`, `0x317e543230ad78d12adcaf82903381820f6d12dc2904c37b869c68dbc876850c`, `0x3d6e0f856bb6c27d646f6fc7bbf55cfb1595cf4b08475b5de379c31b6148c676`, `0x48b223de1cafc24645eb5d40ca93d03bb1838959f089be9bb1659df934f5cee6`, `0x83fa34f737ba91bba5f20c6d7d882303fbb32367c0ecdc6969758826c490d3be`, `0xabddd75762e0d6f38592eb52d5227a748603b3ae167f9f546fd3712d63ce991d`
+- Transactions (all status 1 on chain 50383; each carries a LiquidationEngine log the SDK ABI cannot decode):
+  - `0x3d6e0f856bb6c27d646f6fc7bbf55cfb1595cf4b08475b5de379c31b6148c676` (block 28,563,558): newest indexed `TakeoverBandClamped`, decoded above.
+  - `0x48b223de1cafc24645eb5d40ca93d03bb1838959f089be9bb1659df934f5cee6` (block 28,563,425): newest indexed `LiquidationFeeSkipped`, decoded above.
+  - `0x01e16a12552b1c110c6bda8454c7760188eb40fd5a3ff119d908a7c9579648f5` (block 28,563,452): example tx the scan printed for `0x83fa34f7…`.
+  - `0x317e543230ad78d12adcaf82903381820f6d12dc2904c37b869c68dbc876850c` (block 28,562,508): example tx the scan printed for `0xabddd757…`.
+- Event signatures (topic0, not transactions) missing from `liquidationEngineEventsAbi`:
+  - `0x83fa34f737ba91bba5f20c6d7d882303fbb32367c0ecdc6969758826c490d3be` (indexed as `TakeoverBandClamped`)
+  - `0xabddd75762e0d6f38592eb52d5227a748603b3ae167f9f546fd3712d63ce991d` (indexed as `LiquidationFeeSkipped`)
 
 ## Environment
-@somnia-chain/markets-sdk 0.32.1, Node 22, Somnia Tokyo testnet (chain 50383), LiquidationEngine 0xA66d3C24Ad4a389d863846905D8173e1017e9F4D, RPC https://api.hideki2.infra.testnet.somnia.network, indexer https://hideki-dev.smk.somnia.host/v1/graphql, read-only.
+- SDK: @somnia-chain/markets-sdk 0.32.1
+- Network: Somnia Tokyo testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network)
+- Wallet: n/a (read-only repro, no account needed)
+- Other: Node 22, LiquidationEngine 0xA66d3C24Ad4a389d863846905D8173e1017e9F4D, indexer https://hideki-dev.smk.somnia.host/v1/graphql, read-only.
