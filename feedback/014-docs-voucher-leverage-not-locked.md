@@ -48,5 +48,10 @@ The pair at blocks 28557491 (ZEC 1x → 5x) and 28546603/28546824 (SOL and BTC 2
 ## Suggested fix
 Replace the rule with what the contract does, for example: "While the credit remains, effective leverage is capped at 20x (`getVoucherLeverageCap`). You can still pick a lower setting, and it applies." If the intent really is to lock the setting, enforce `VoucherAccountLeverageLocked` in `setMaxLeverage` for accounts with `getCreditFloor > 0`, and update the SDK TSDoc that says a stricter setting "still wins".
 
+## Evidence
+- Repro script: `014-repro.mts` in this folder (read-only: `eth_call`, `eth_getLogs` and indexer queries; it signs nothing). Run with `npx tsx 014-repro.mts` from a project with `@somnia-chain/markets-sdk@0.32.1` installed. The output under **Actual** comes from two separate runs.
+- Transactions: `0x5ab4bb08b66057857687bc54567a630fdc5ecc7e291d8e817b32f75a986a5564`, `0xf7100d6f6d8b867d8c3fc81afda74a3263f156446ce1561d2b5bad9906e69eb5`, `0x11a323d78ce8bb6dfc2dcd727212ae48bf4c139b1e3028f8142eda03d12f39c3`, `0x1e23d32471876b6bc6c19a32493491aa46444b4c05095262f1e647ff4ffc2eaf`, `0xf8e7388dc57367322934baf310765e7cafbf8c990370bbb90f5660cb1cc0df6b`, `0xfb0673d5e78eb731c9dbb7922721885d19d3317dab66fbd62623ed016ed0abff`, `0x98c88b67d12d77eedf6045a1d3510a630535b32cc7884646d452f6072157358a`, `0x1aae32cd964254a1104691f67e633eea316a80c7cb262323451973d8bfd02a5a`
+- Blocks: 28557491, 28557659, 28556700, 28553953, 28554615, 28552336
+
 ## Environment
 @somnia-chain/markets-sdk 0.32.1, Node 22, Somnia Tokyo testnet (chain 50383), MarginBank 0x478769E1177C0773c43A593DCCc4Ad15F15F1394, VoucherDistributor 0x2ACD9EFdA721450906bfE1bef3edE269636E42C4, RPC https://api.hideki2.infra.testnet.somnia.network, docs checked 2026-10-20 (llms-full.txt), read-only.
