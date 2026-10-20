@@ -9,12 +9,23 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { defineChain } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { loadConfig } from "../src/config.js";
+import { SOMNIA_MAINNET_ADDRESSES, SOMNIA_TESTNET_ADDRESSES } from "@somnia-chain/markets-sdk";
+import { loadConfig, parsePerpAddressesJson } from "../src/config.js";
 import { createTradingKey, linkProblem, type TradingKey } from "../src/operator.js";
 import { sizeOrder } from "../src/orders.js";
 import type { PerpMarket } from "../src/markets.js";
 
-const ENV_KEYS = ["NETWORK", "OWNER_ADDRESS", "PRIVATE_KEY", "CHAIN_ID", "RPC_URL", "WS_RPC_URL", "INDEXER_URL"];
+const ENV_KEYS = [
+  "NETWORK",
+  "OWNER_ADDRESS",
+  "PRIVATE_KEY",
+  "CHAIN_ID",
+  "RPC_URL",
+  "WS_RPC_URL",
+  "INDEXER_URL",
+  "PERP_ADDRESSES_JSON",
+  "OPERATOR_PERMISSIONS_REGISTRY",
+];
 let saved: Record<string, string | undefined> = {};
 
 beforeEach(() => {
@@ -43,6 +54,7 @@ describe("network", () => {
     expect(cfg.rpcUrl).toBe("https://api.hideki2.infra.testnet.somnia.network");
     expect(cfg.indexerUrl).toBe("https://hideki-dev.smk.somnia.host/v1/graphql");
     expect(cfg.operatorRegistry).toBe("0x6B2FbfeD328FF5F20C0BE7D3C3437613aFFE8D3a");
+    expect(cfg.addresses).toBe(SOMNIA_TESTNET_ADDRESSES);
   });
 
   it("still reaches Shannon with NETWORK=testnet", () => {
@@ -50,13 +62,59 @@ describe("network", () => {
     const cfg = loadConfig();
     expect(cfg.chainId).toBe(50312);
     expect(cfg.operatorRegistry).toBe("0x15C7e8CE38F021c5b45d098AaD788f63090bF20A");
+    expect(cfg.addresses).toBe(SOMNIA_TESTNET_ADDRESSES);
   });
 
-  it("refuses mainnet and anything that is not a perp network", () => {
-    process.env.NETWORK = "mainnet";
-    expect(() => loadConfig()).toThrow(/no perp markets on Somnia mainnet/);
+  it("refuses anything that is not a perp network", () => {
     process.env.NETWORK = "tokyo";
     expect(() => loadConfig()).toThrow(/not a perp network/);
+  });
+});
+
+describe("NETWORK=mainnet", () => {
+  const factory = privateKeyToAccount(generatePrivateKey()).address;
+  const bank = privateKeyToAccount(generatePrivateKey()).address;
+  const registry = privateKeyToAccount(generatePrivateKey()).address;
+
+  it("fails fast while the SDK's mainnet preset has no perp singletons", () => {
+    process.env.NETWORK = "mainnet";
+    // Guard on the premise: if a newer SDK ships perpPoolFactory this test must change.
+    expect((SOMNIA_MAINNET_ADDRESSES as { perpPoolFactory?: string }).perpPoolFactory).toBeUndefined();
+    expect(() => loadConfig()).toThrow(
+      "dreamDEX perps are not live on mainnet yet: set PERP_ADDRESSES_JSON or upgrade @somnia-chain/markets-sdk",
+    );
+  });
+
+  it("starts on the mainnet preset once PERP_ADDRESSES_JSON supplies the perp singletons", () => {
+    process.env.NETWORK = "mainnet";
+    process.env.PERP_ADDRESSES_JSON = JSON.stringify({
+      perpPoolFactory: factory.toLowerCase(),
+      marginBank: bank,
+      operatorPermissionsRegistry: registry,
+    });
+    const cfg = loadConfig();
+    expect(cfg.chainId).toBe(5031);
+    expect(cfg.indexerUrl).toBe("https://prd.smk.somnia.host/v1/graphql");
+    expect(cfg.addresses.perpPoolFactory).toBe(factory);
+    expect(cfg.addresses.marginBank).toBe(bank);
+    expect(cfg.addresses.collateral).toBe(SOMNIA_MAINNET_ADDRESSES.collateral);
+    expect(cfg.operatorRegistry).toBe(registry);
+  });
+
+  it("still fails fast when the override leaves out perpPoolFactory", () => {
+    process.env.NETWORK = "mainnet";
+    process.env.PERP_ADDRESSES_JSON = JSON.stringify({ marginBank: bank });
+    expect(() => loadConfig()).toThrow(/not live on mainnet yet/);
+  });
+
+  it("rejects a malformed override instead of falling back to the preset", () => {
+    expect(() => parsePerpAddressesJson("{not json")).toThrow(/not valid JSON/);
+    expect(() => parsePerpAddressesJson('["0x1"]')).toThrow(/must be a JSON object/);
+    expect(() => parsePerpAddressesJson('{"perpPoolFactroy":"0x0000000000000000000000000000000000000001"}')).toThrow(
+      /unknown key "perpPoolFactroy"/,
+    );
+    expect(() => parsePerpAddressesJson('{"marginBank":"0x1234"}')).toThrow(/not an address/);
+    expect(parsePerpAddressesJson("  ")).toEqual({});
   });
 });
 
