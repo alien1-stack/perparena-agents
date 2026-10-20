@@ -31,5 +31,10 @@ Run 2 (head 28571309): identical apart from the head.
 ## Suggested fix
 Replace the number with the Hideki figure (deployed at block 202,347; first liquidation indexed at 10,360,563), or drop the number and say "indexed from the contract's deployment".
 
+## Evidence
+- Repro script: `017-repro.mts` in this folder (read-only: `eth_call`, `eth_getLogs` and indexer queries; it signs nothing). Run with `npx tsx 017-repro.mts` from a project with `@somnia-chain/markets-sdk@0.32.1` installed. The output under **Actual** comes from two separate runs.
+- Transactions: `0x6b503743de9af62c442852f608f5e83b589392463dc847189d79710e00f18ff7`
+- Blocks: 436,735,800, 202,347, 10,360,563, 436735800
+
 ## Environment
 @somnia-chain/markets-sdk 0.32.1 (`docs/PERPS.md`), Node 22, Somnia Tokyo testnet (chain 50383), LiquidationEngine 0xA66d3C24Ad4a389d863846905D8173e1017e9F4D, RPC https://api.hideki2.infra.testnet.somnia.network, indexer https://hideki-dev.smk.somnia.host/v1/graphql, read-only.
