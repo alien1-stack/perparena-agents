@@ -21,7 +21,7 @@ Every decision and every transaction hash goes into a public journal, and a stat
 - **Radar features:** live top carry pair (market-neutral), Wallet X-Ray for any address (`?wallet=0x...` deep link), **Carry Leaderboard** (top funding harvesters vs bleeders across ~1,260 Arena wallets, "your rank" lookup, refreshes every 60 s), one-click Share on X
 - **Bot dashboard:** `docs/index.html` (reads `docs/data.json` written by each tick)
 - **Strategy:** `kit/strategies/arena-autopilot/src/tick.ts`
-- **Feedback track:** 24 reproduced items (5 major, 19 normal), each with a read-only repro script (20 published, 4 committed by SHA-256 in `feedback/COMMITMENTS.md` until submission). Start at [`feedback/INDEX.md`](feedback/INDEX.md)
+- **Feedback track:** 22 reproduced items (5 major, 17 normal), each with a read-only repro script (18 published, 4 committed by SHA-256 in `feedback/COMMITMENTS.md` until submission; 3 withdrawn, see the index). Start at [`feedback/INDEX.md`](feedback/INDEX.md)
 
 ## Who it is for
 
@@ -69,37 +69,53 @@ The [radar](https://alien1-stack.github.io/alien1-stack/radar/) has a **Trade �
 
 ## Mainnet readiness
 
-**Status (checked 2026-10-20): Somnia mainnet has no dreamDEX perp markets yet, so Autopilot cannot trade there today.** The kit refuses to start on mainnet, by design:
+**Status (checked 2026-10-20): Somnia mainnet has no dreamDEX perp markets yet, so Autopilot cannot trade there today. The mainnet switch is already in the code.** It is gated on the one thing that is still missing: the mainnet perp contract addresses.
 
 - The mainnet indexer (`prd.smk.somnia.host`) returns 0 `PERP` markets.
-- `SOMNIA_MAINNET_ADDRESSES` in `@somnia-chain/markets-sdk` (0.30.0 in `kit/`, and 0.32.1, the newest version we checked) has no perp singletons: no `marginBank`, no `perpPoolFactory`, no `priceFeedScheduler`.
-- `kit/packages/perp-core/src/config.ts` throws on `NETWORK=mainnet` and leaves the mainnet `OPERATOR_REGISTRY` at `0x000…0`.
+- `SOMNIA_MAINNET_ADDRESSES` in `@somnia-chain/markets-sdk` (0.31.0, the version perp-core resolves in `kit/`, and 0.32.1, the newest version we checked) has no perp singletons: no `marginBank`, no `perpPoolFactory`, no `priceFeedScheduler`.
 
-The mainnet RPC (`api.infra.mainnet.somnia.network`), indexer (`prd.smk.somnia.host`) and chain id (5031) are already in perp-core's `ENDPOINTS`. Once dreamDEX publishes the mainnet perp addresses, the switch is one environment variable:
+**What exists now** (`kit/packages/perp-core`, `kit/strategies/arena-autopilot`):
+
+| Where | What it does |
+|---|---|
+| `perp-core/src/config.ts` | `NETWORK=mainnet` is accepted. `resolvePerpAddresses()` picks the SDK preset per network (`SOMNIA_TESTNET_ADDRESSES` for `hideki`/`testnet`, `SOMNIA_MAINNET_ADDRESSES` for `mainnet`) and lays `PERP_ADDRESSES_JSON` over it. On mainnet it throws before any connection if no `perpPoolFactory` is known, so the bot cannot sit connected to an empty market list looking healthy |
+| `perp-core/src/config.ts` | `PERP_ADDRESSES_JSON`: a JSON object of addresses (`perpPoolFactory`, `marginBank`, `priceFeedScheduler`, `operatorPermissionsRegistry`, or any SDK address key). Unknown keys and non-addresses are rejected, so a typo cannot fall back to the preset unnoticed. `operatorPermissionsRegistry` from it also fills the mainnet stop-order registry, which is `0x0` until published |
+| `perp-core/src/exchange.ts` | The exchange uses `config.addresses` instead of the hardcoded `SOMNIA_TESTNET_ADDRESSES` |
+| `arena-autopilot/src/tick.ts` | Equity and margin are scaled by the quote token's `quoteDecimals` (via `fromRaw`), not a hardcoded `1e18`. Prices stay 1e18, which is the protocol's fixed price scale |
+| `perp-core/tests/trading-key.test.ts` | Tests for the mainnet fail-fast, the override path (chain 5031, mainnet indexer, override addresses merged onto the mainnet preset) and malformed overrides. Hideki/testnet still resolve to the exact `SOMNIA_TESTNET_ADDRESSES` object |
+
+Testnet behaviour is unchanged: with `PERP_ADDRESSES_JSON` unset, `hideki` and `testnet` get the same address object as before, and Hideki's perp markets all use 18-decimal USDso, so the journal numbers are identical.
+
+Today, a mainnet dry run stops at startup with one clear message, before it touches the network:
+
+```text
+$ NETWORK=mainnet PRIVATE_KEY=0x<bot key> OWNER_ADDRESS=0x<your wallet> DRY_RUN=true npx tsx src/tick.ts
+Error: dreamDEX perps are not live on mainnet yet: set PERP_ADDRESSES_JSON or upgrade @somnia-chain/markets-sdk
+  SOMNIA_MAINNET_ADDRESSES in the installed SDK has no marginBank, perpPoolFactory, priceFeedScheduler, and PERP_ADDRESSES_JSON is unset.
+  Once dreamDEX publishes the mainnet perp deployment: PERP_ADDRESSES_JSON='{"perpPoolFactory":"0x…","marginBank":"0x…","priceFeedScheduler":"0x…"}'
+```
+
+**The one remaining step** happens when dreamDEX publishes the mainnet perp deployment. Do either of these:
+
+1. Upgrade `@somnia-chain/markets-sdk` to the first release whose `SOMNIA_MAINNET_ADDRESSES` includes `perpPoolFactory`. No code change is needed.
+2. Or, before that release, pass the published addresses in:
 
 ```bash
-NETWORK=mainnet PRIVATE_KEY=0x<bot key> OWNER_ADDRESS=0x<your wallet> AUTOPILOT_SOMNIA_AGENT=gate DRY_RUN=true npx tsx src/tick.ts
+cd kit/strategies/arena-autopilot
+NETWORK=mainnet \
+PERP_ADDRESSES_JSON='{"perpPoolFactory":"0x…","marginBank":"0x…","priceFeedScheduler":"0x…"}' \
+PRIVATE_KEY=0x<mainnet bot key> OWNER_ADDRESS=0x<your wallet> AUTOPILOT_SOMNIA_AGENT=gate DRY_RUN=true npx tsx src/tick.ts
 ```
 
-That command only works after this small perp-core change, which we have **not** made, because there are no perp markets for it to reach yet:
+The mainnet RPC (`api.infra.mainnet.somnia.network`), indexer (`prd.smk.somnia.host`) and chain id (5031) are already in perp-core's `ENDPOINTS`.
 
-```ts
-// kit/packages/perp-core/src/config.ts: let mainnet through (and delete the `if (raw === "mainnet") throw` block above it)
-const PERP_NETWORKS: readonly Network[] = ["hideki", "testnet", "mainnet"];
-// kit/packages/perp-core/src/exchange.ts: also import SOMNIA_MAINNET_ADDRESSES, then pick the address set per network instead of always testnet
-addresses: config.network === "mainnet" ? SOMNIA_MAINNET_ADDRESSES : SOMNIA_TESTNET_ADDRESSES,
-```
+**Our pledge: We will run Arena Autopilot on dreamDEX mainnet within 30 days of the perps launch.**
 
-Then update `@somnia-chain/markets-sdk` to the first release whose `SOMNIA_MAINNET_ADDRESSES` includes `marginBank` and `perpPoolFactory`.
-
-**What else in the code is testnet-only:**
+**What is still testnet-specific, and does not block mainnet:**
 
 | Where | What | Blocks mainnet? |
 |---|---|---|
-| `perp-core/src/config.ts` | `NETWORK=mainnet` refused, and `PERP_NETWORKS` is only `hideki`/`testnet` | Yes. This is the guard above |
-| `perp-core/src/exchange.ts` | `addresses: SOMNIA_TESTNET_ADDRESSES` is hardcoded | Yes. It needs the per-network pick above |
-| `perp-core/src/config.ts` | Mainnet `OPERATOR_REGISTRY` is `0x0` | No. Only stop orders use it, and Autopilot watches stops itself. If you need it, set `OPERATOR_PERMISSIONS_REGISTRY` |
-| `arena-autopilot/src/tick.ts` (lines 91, 236) | Equity and margin are divided by `1e18`, not by the quote token's `quoteDecimals` | No. It affects only the journal, the dashboard, and the equity the risk officer sees. Order sizing uses the market's own decimals. Check this if mainnet collateral is not 18-decimal |
+| `perp-core/src/config.ts` | Mainnet `OPERATOR_REGISTRY` is `0x0` | No. Only stop orders use it, and Autopilot watches stops itself. If you need it, set `OPERATOR_PERMISSIONS_REGISTRY` or put `operatorPermissionsRegistry` in `PERP_ADDRESSES_JSON` |
 | `arena-autopilot/src/somnia-agent.ts` | The risk officer runs on Somnia Shannon testnet (chain 50312) and is paid in STT | No. It is a separate chain from the one you trade on. Gate mode keeps working as long as `SOMNIA_AGENT_PRIVATE_KEY` holds STT |
 | `docs/radar.html` | Reads the Tokyo RPC and indexer, and Trade links go to `app.testnet.dreamdex.io` | No. The page shows a "Network: Somnia Tokyo testnet" badge, and these switch when perps launch |
 
@@ -167,4 +183,4 @@ The bot key `0x775275…Bb47` is linked to the trading wallet with Perps-only ac
 
 ## Credits
 
-Built on the MIT-licensed [dreamDEX bot kit](https://github.com/somnia-chain/dreamdex-bot-kit) (`kit/`, unchanged apart from `strategies/arena-autopilot`). Testnet only. This is paper money and not financial advice.
+Built on the MIT-licensed [dreamDEX bot kit](https://github.com/somnia-chain/dreamdex-bot-kit) (`kit/`). Our changes: `strategies/arena-autopilot`, plus the mainnet switch in `packages/perp-core` (`config.ts`, `exchange.ts`, its tests) and the matching notes in `.env.example` and `docs/perps.md`. Testnet only. This is paper money and not financial advice.
