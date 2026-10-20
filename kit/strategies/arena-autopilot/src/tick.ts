@@ -196,7 +196,10 @@ async function main() {
   // advisory: verdict is journaled only. gate: anything but APPROVE (REJECT,
   // no verdict, error) skips entries; exits above already ran, so the gate
   // can only ever reduce risk.
-  if (SOMNIA_MODE !== "off" && wanted.size > 0) {
+  // AUTOPILOT_SOMNIA_REVIEW_EVERY_TICK=1: also review the held book on ticks with
+  // no new entries, so every live tick carries an on-chain verdict in the journal.
+  const reviewEveryTick = process.env.AUTOPILOT_SOMNIA_REVIEW_EVERY_TICK === "1";
+  if (SOMNIA_MODE !== "off" && (wanted.size > 0 || (reviewEveryTick && target.length > 0))) {
     const facts = await bookFacts(ctx, target, bySymbol, account);
     const summary = bookSummary(target);
     let verdict = "ERROR";
