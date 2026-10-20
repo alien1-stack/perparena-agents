@@ -51,3 +51,13 @@ b81b2e02fb1a40ad658ca4ff6e97b1c1f46abd21153339ab98c65990341beca8  item 028 repor
 188e7fe2ea55b52e70a3c8744a793201f7b9f8e3fc543e11cc818ef915c06b30  item 028 repro script
 ac7b8036fc6ba73e7449083bc936503a4cf105d388dd8e4f7a1d7143556138dc  item 028 repro output (.txt)
 ```
+
+## Items 029+ (committed 2026-10-21, not yet revealed)
+
+Same rule as above: each line is the `sha256sum` of the exact file that will be published. Originals are kept byte-exact in `commitments/` (not pushed until submission).
+
+```
+8ae0db0f037d133e1a4212c481b4e4318e585cce8bc93059118682564a894b88  item 029 report (.md)
+45e78e144fca1f8e849a201a46e081ef446c221a96b976edac00d852950e1b01  item 029 repro script
+87f9ab46b90724771f2fb31e6d357df80453ad09e400ce54b0e790f3a6b8546a  item 029 repro output (.txt)
+```
