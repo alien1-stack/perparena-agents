@@ -228,8 +228,9 @@ async function loadFeedback(){
   for(const line of idx.split("\n")){const m=/^\|\s*\[(\d{3})\]\(([^)]+)\)\s*\|\s*(.+?)\s*\|\s*(major|normal)\s*\|\s*([^|]+?)\s*\|/.exec(line);if(m)items.push({n:m[1],file:m[2],title:m[3],sev:m[4],area:m[5]})}
   const pub=new Set(items.map(i=>i.n));
   const committed={};
-  for(const line of (com||"").split("\n")){const m=/^([0-9a-f]{64})\s+item (\d{3}) report/.exec(line);if(m&&!pub.has(m[2]))committed[m[2]]=m[1]}
-  const withdrawn=(idx.match(/^(\d{3}) was withdrawn/m)||[])[1];
+  const wsec=idx.split(/^Withdrawn\b/m)[1]||"";
+  const withdrawn=[...wsec.matchAll(/^- (\d{3}):/gm)].map(m=>m[1]);
+  for(const line of (com||"").split("\n")){const m=/^([0-9a-f]{64})\s+item (\d{3}) report/.exec(line);if(m&&!pub.has(m[2])&&!withdrawn.includes(m[2]))committed[m[2]]=m[1]}
   D.fb={ok:true,items,committed:Object.entries(committed).sort(),withdrawn};
   if(cur===4)show(4,false);
 }
@@ -305,11 +306,11 @@ function stepFeedback(){
   const lb=`<div class="links"><a class="pri" href="radar.html#lb">Carry Leaderboard →</a><a href="${RADAR_LIVE}#lb" target="_blank" rel="noopener">Hosted leaderboard</a><a href="https://x.com/day1onearth/status/2112624874833191217" target="_blank" rel="noopener">Leaderboard launch on X</a></div>`;
   if(!F)return `<div class="kicker">Step 5</div><h2>Loading the feedback index…</h2>`;
   if(!F.ok)return `<div class="kicker">Step 5 · feedback track</div><h2>Feedback track and Carry Leaderboard</h2><p class="why">Could not load the index from this host. Open it on GitHub.</p><div class="links"><a href="${REPO}/blob/main/feedback/INDEX.md">feedback/INDEX.md</a></div>${lb}`;
-  const pub=F.items,maj=pub.filter(i=>i.sev==="major"),standing=pub.length+F.committed.length,filed=standing+(F.withdrawn?1:0);
+  const pub=F.items,maj=pub.filter(i=>i.sev==="major"),standing=pub.length+F.committed.length;
   const areas={};pub.forEach(i=>areas[i.area]=(areas[i.area]||0)+1);
   return `<div class="kicker">Step 5 · feedback track + Carry Leaderboard</div>
-  <h2>${filed} feedback items filed, each with a read-only repro</h2>
-  <p class="why">Found while building the bot and the radar. Every item ships a repro script a judge can run without a key. ${F.withdrawn?`${F.withdrawn} was withdrawn as a duplicate, so ${standing} stand. `:""}${F.committed.length?`${F.committed.length} are committed by SHA-256 hash and revealed on submission.`:""}</p>
+  <h2>${standing} feedback items, each with a read-only repro</h2>
+  <p class="why">Found while building the bot and the radar. Every item ships a repro script a judge can run without a key. ${F.withdrawn.length?`Withdrawn: ${F.withdrawn.join(", ")} (see INDEX.md). `:""}${F.committed.length?`${F.committed.length} are committed by SHA-256 hash and revealed on submission.`:""}</p>
   <div class="kpis">
     <div class="kpi"><span>Published</span><b>${pub.length}</b><small>${maj.length} major · ${pub.length-maj.length} normal</small></div>
     <div class="kpi"><span>Committed</span><b>${F.committed.length}</b><small>sha256 in COMMITMENTS.md</small></div>
