@@ -46,6 +46,7 @@ const NET_CAP = envNum("AUTOPILOT_NET_CAP_USDSO", 150);
 const MIN_APR = envNum("AUTOPILOT_MIN_APR", 0.15);
 const EXIT_APR = envNum("AUTOPILOT_EXIT_APR", 0.05);
 const STOP_LOSS_PCT = envNum("AUTOPILOT_STOP_LOSS_PCT", 4);
+const COOLDOWN_H = envNum("AUTOPILOT_COOLDOWN_HOURS", 12);
 const SLIPPAGE_BPS = envNum("AUTOPILOT_SLIPPAGE_BPS", 30);
 const OUT = resolve(process.env.AUTOPILOT_OUT_DIR ?? resolve(process.cwd(), "../../.."));
 // Somnia on-chain LLM risk officer (needs SOMNIA_AGENT_PRIVATE_KEY with STT on Shannon).
@@ -169,6 +170,25 @@ async function main() {
       continue;
     }
     await trade(ctx, v.m, p.side === "long" ? "short" : "long", BigInt(Math.floor(p.contracts * 10 ** v.m.info.baseDecimals)), v.mark!, `close (${reason})`, live, account);
+    if (reason.startsWith("stop-loss")) wanted.delete(p.symbol); // no same-tick re-entry after a stop
+  }
+
+  // 3a. Stop-loss cooldown: a market stopped out in the last COOLDOWN_H hours
+  // is not re-entered, so a trending market cannot churn stop -> re-open -> stop.
+  const since = Date.now() - COOLDOWN_H * 3600_000;
+  for (const d of [0, 1]) {
+    const f = resolve(OUT, `journal/${new Date(Date.now() - d * 86400_000).toISOString().slice(0, 10)}.jsonl`);
+    if (!existsSync(f)) continue;
+    for (const line of readFileSync(f, "utf8").split("\n")) {
+      if (!line.includes("stop-loss")) continue;
+      try {
+        const e = JSON.parse(line) as { t?: string; symbol?: string; why?: string; kind?: string };
+        if (e.kind === "trade" && e.symbol && e.why?.startsWith("close (stop-loss") && Date.parse(e.t ?? "") >= since && wanted.has(e.symbol)) {
+          wanted.delete(e.symbol);
+          log("cooldown", { symbol: e.symbol, until: new Date(Date.parse(e.t!) + COOLDOWN_H * 3600_000).toISOString() });
+        }
+      } catch {}
+    }
   }
 
   // 3b. Somnia Agents risk officer: an on-chain LLM (Somnia Shannon testnet,
