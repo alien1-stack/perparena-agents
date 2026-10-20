@@ -58,5 +58,9 @@ Note: `listLiquidations({ kind: "TakeoverBandClamped" })` works at runtime (it n
 ## Suggested fix
 Add the two fragments to `liquidationEngineEventsAbi`, generated from `indexer/abis/LiquidationEngine.json` like the rest. Add `TakeoverBandClamped` to `LIQUIDATION_KIND` (and document `price`/`marketBound`/`clampedBound` on `LiquidationEvent`). Document `LiquidationFeeSkipped` on `PerpFeeRecord.kind`, with its reason enum, and select `skipReason` / `requestedAmount` in `listPerpFees`. If they are left out on purpose, add them to the exclusion list in the const's TSDoc.
 
+## Evidence
+- Repro script: `016-repro.mts` in this folder (read-only: `eth_call`, `eth_getLogs` and indexer queries; it signs nothing). Run with `npx tsx 016-repro.mts` from a project with `@somnia-chain/markets-sdk@0.32.1` installed. The output under **Actual** comes from two separate runs.
+- Transactions: `0x01e16a12552b1c110c6bda8454c7760188eb40fd5a3ff119d908a7c9579648f5`, `0x317e543230ad78d12adcaf82903381820f6d12dc2904c37b869c68dbc876850c`, `0x3d6e0f856bb6c27d646f6fc7bbf55cfb1595cf4b08475b5de379c31b6148c676`, `0x48b223de1cafc24645eb5d40ca93d03bb1838959f089be9bb1659df934f5cee6`, `0x83fa34f737ba91bba5f20c6d7d882303fbb32367c0ecdc6969758826c490d3be`, `0xabddd75762e0d6f38592eb52d5227a748603b3ae167f9f546fd3712d63ce991d`
+
 ## Environment
 @somnia-chain/markets-sdk 0.32.1, Node 22, Somnia Tokyo testnet (chain 50383), LiquidationEngine 0xA66d3C24Ad4a389d863846905D8173e1017e9F4D, RPC https://api.hideki2.infra.testnet.somnia.network, indexer https://hideki-dev.smk.somnia.host/v1/graphql, read-only.
