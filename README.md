@@ -87,8 +87,8 @@ AUTOPILOT_SOMNIA_AGENT=gate SOMNIA_AGENT_PRIVATE_KEY=0x<shannon key> NETWORK=hid
 
 | Time (UTC) | Leg | Fill | Tx (Somnia Tokyo, chain 50383) |
 |---|---|---|---|
-| 2026-10-20 ~14:45 | short BTC-PERP 0.0012 (funding +132.7% APR, paid to shorts) | 83,209.2 | `0x92e9cf8ebd54b7345a408ec4cea11cb9321572045b70585e44e498463e41d47f` (block 28552745) |
-| 2026-10-20 ~14:45 | long LIT-PERP 29.8 (funding −28.8% APR, paid to longs) | 3.3474 | `0xd1b752fb21a8119e6c57900b226d1463ff081d2d83372871df3c633e1aa1b877` (block 28552762) |
+| 2026-10-20 ~14:39 | short BTC-PERP 0.0012 (funding +132.7% APR, paid to shorts) | 83,209.2 | `0x92e9cf8ebd54b7345a408ec4cea11cb9321572045b70585e44e498463e41d47f` (block 28552745) |
+| 2026-10-20 ~14:39 | long LIT-PERP 29.8 (funding −28.8% APR, paid to longs) | 3.3474 | `0xd1b752fb21a8119e6c57900b226d1463ff081d2d83372871df3c633e1aa1b877` (block 28552762) |
 
 The bot key `0x775275…Bb47` is linked to the trading wallet with Perps-only access (Link a bot), so it places orders through `placeOrderFor` and can never withdraw. Net exposure ≈ 0 (100 USDso per leg).
 
