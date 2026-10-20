@@ -64,6 +64,15 @@
   .lb td a{text-decoration:none} .lb td a:hover{text-decoration:underline}
   .xray.lb td button{font:500 11px Geist,system-ui,sans-serif;padding:2px 9px;border-radius:99px;background:transparent;color:var(--acc)}
   #merank{margin:10px 0 0;max-width:none}
+  a.trade{font:500 11px Geist,system-ui,sans-serif;text-decoration:none;white-space:nowrap;margin-left:6px;padding:1px 7px;border:1px solid var(--line);border-radius:99px;color:var(--acc)}
+  a.trade:hover{border-color:var(--acc)}
+  .carry .act{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+  .carry button{font:600 13px Geist,system-ui,sans-serif;padding:7px 12px;border-radius:10px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer}
+  .carry .hint{font-size:12px;color:var(--mute)}
+  #cmdbox{display:none;margin:-8px 0 16px}
+  #cmdbox textarea{width:100%;font:12px/1.4 "Geist Mono",monospace;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);resize:vertical}
+  .net{display:inline-block;margin-top:4px;padding:2px 8px;border:1px solid var(--line);border-radius:99px;background:var(--card)}
+  .net b{color:var(--ink);font-weight:500}
 </style>
 </head>
 <body>
@@ -76,10 +85,12 @@
     <div>
       <div class="live"><span class="dot"></span><span id="status">connecting…</span></div>
       <div class="live" style="margin-top:4px"><a href="judge.html">Judge mode</a> · <a href="timeline.html">Timeline</a></div>
+      <div class="live net" id="net" title="Somnia Tokyo testnet, chain 50383">Network: <b>Somnia Tokyo testnet</b> · mainnet: switches when dreamDEX perps launch</div>
     </div>
   </header>
   <div class="alerts" id="alerts"></div>
   <div class="carry" id="carry"></div>
+  <div id="cmdbox"><span class="hint">Clipboard blocked. Copy this command:</span><textarea id="cmdtext" rows="3" readonly></textarea></div>
   <div class="xray">
     <div class="xray-head">
       <h2 style="margin:0">Wallet X-Ray</h2>
@@ -121,6 +132,12 @@ const RPC="https://api.hideki2.infra.testnet.somnia.network";
 const GQL="https://hideki-dev.smk.somnia.host/v1/graphql";
 const SEL={book:"0x4f1ce9a7",oi:"0xbb24882e",params:"0x35a15b24"};
 const pad=(v)=>BigInt(v).toString(16).padStart(64,"0");
+// Official dreamDEX app deep link: /trade/perps/<venue>/<BASE>-PERP (the app's own canonicalPerpsHref pattern).
+const APP="https://app.testnet.dreamdex.io";
+const tradeUrl=(s)=>`${APP}/trade/perps/tokyo/${encodeURIComponent(s)}-PERP`;
+const tradeA=(s)=>`<a class="trade" href="${tradeUrl(s)}" target="_blank" rel="noopener" title="Open ${String(s).replace(/[^A-Za-z0-9.]/g,"")}-PERP in the dreamDEX app">Trade ↗</a>`;
+const LINK_BOT=`${APP}/docs/trading/common/link-a-bot`;
+const AUTOPILOT_CMD="cd kit/strategies/arena-autopilot && NETWORK=hideki PRIVATE_KEY=0x<bot key> OWNER_ADDRESS=0x<your wallet> AUTOPILOT_SOMNIA_AGENT=gate DRY_RUN=true npx tsx src/tick.ts";
 let rid=1;
 async function rpcBatch(calls){
   const body=calls.map(c=>({jsonrpc:"2.0",id:rid++,method:"eth_call",params:[{to:c.to,data:c.data},"latest"]}));
@@ -180,7 +197,7 @@ function render(){
   document.getElementById("rows").innerHTML=rows.map(r=>{
     const sp=r.spreadBps==null?"–":(r.crossed?`<span class="pill neg">CROSSED ${r.spreadBps.toFixed(1)}</span>`:r.spreadBps.toFixed(1));
     const cls=r.oiPct>=95?"hot":r.oiPct>=70?"warm":"";
-    return `<tr><td class="sym">${r.sym}</td><td>${fp(r.mid)}</td><td>${sp}</td><td class="${Math.abs(r.apr)>=0.15?(r.apr>0?"neg":"pos"):""}">${(r.apr*100).toFixed(1)}%</td><td>${r.oiPct.toFixed(1)}%<span class="bar ${cls}"><i style="width:${Math.min(100,r.oiPct)}%"></i></span></td><td>${Math.round(r.notionalOI).toLocaleString()}</td><td>${r.lev.toFixed(0)}x</td></tr>`}).join("");
+    return `<tr><td class="sym">${r.sym}${tradeA(r.sym)}</td><td>${fp(r.mid)}</td><td>${sp}</td><td class="${Math.abs(r.apr)>=0.15?(r.apr>0?"neg":"pos"):""}">${(r.apr*100).toFixed(1)}%</td><td>${r.oiPct.toFixed(1)}%<span class="bar ${cls}"><i style="width:${Math.min(100,r.oiPct)}%"></i></span></td><td>${Math.round(r.notionalOI).toLocaleString()}</td><td>${r.lev.toFixed(0)}x</td></tr>`}).join("");
   document.querySelectorAll("#head th").forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1}render()});
 }
 // ---- Carry pair: best short-side carry + best long-side carry, both with OI headroom ----
@@ -189,14 +206,29 @@ function renderCarry(){
   const shortLeg=[...ok].filter(r=>r.apr>0).sort((a,b)=>b.apr-a.apr)[0];
   const longLeg=[...ok].filter(r=>r.apr<0).sort((a,b)=>a.apr-b.apr)[0];
   const el=document.getElementById("carry");
-  if(!shortLeg||!longLeg){el.innerHTML='<span class="lbl">Top carry pair</span><span>No two-sided carry right now.</span>';return}
+  if(!shortLeg||!longLeg){window._carryText="";el.innerHTML='<span class="lbl">Top carry pair</span><span>No two-sided carry right now.</span>';return}
   const head=(r)=>Math.max(0,(r.maxOI-r.oi)*r.mid);
   const cap=Math.min(head(shortLeg),head(longLeg));
   const net=(shortLeg.apr+Math.abs(longLeg.apr))/2;
-  el.innerHTML=`<div><span class="lbl">Top carry pair (market-neutral)</span><br><b>Short ${shortLeg.sym} ${(shortLeg.apr*100).toFixed(1)}% · Long ${longLeg.sym} ${(longLeg.apr*100).toFixed(1)}%</b></div>
+  const pair=`Short ${shortLeg.sym} ${(shortLeg.apr*100).toFixed(1)}% · Long ${longLeg.sym} ${(longLeg.apr*100).toFixed(1)}%`;
+  window._carryText=`Top carry pair (market-neutral) ${pair} Blended carry APR ${(net*100).toFixed(1)}% Room before OI cap $${Math.round(cap).toLocaleString()}`;
+  el.innerHTML=`<div><span class="lbl">Top carry pair (market-neutral)</span><br><b>Short ${shortLeg.sym} ${(shortLeg.apr*100).toFixed(1)}%</b>${tradeA(shortLeg.sym)} <b>· Long ${longLeg.sym} ${(longLeg.apr*100).toFixed(1)}%</b>${tradeA(longLeg.sym)}</div>
   <div><span class="lbl">Blended carry APR</span><br><b class="pos">${(net*100).toFixed(1)}%</b></div>
-  <div><span class="lbl">Room before OI cap</span><br><b>$${Math.round(cap).toLocaleString()}</b></div>`;
+  <div><span class="lbl">Room before OI cap</span><br><b>$${Math.round(cap).toLocaleString()}</b></div>
+  <div class="act"><button type="button" id="autopilot" title="Copies a DRY_RUN command for Arena Autopilot. Link a bot first.">Run it with Autopilot</button><span class="hint">link a bot first (<a href="${LINK_BOT}" target="_blank" rel="noopener">Link a bot guide</a>)</span></div>`;
 }
+// Copy the ready Autopilot command; fall back to a visible, pre-selected textarea when the clipboard is blocked.
+document.getElementById("carry").addEventListener("click",async e=>{
+  const b=e.target.closest("#autopilot"); if(!b)return;
+  const box=document.getElementById("cmdbox"), ta=document.getElementById("cmdtext");
+  ta.value=AUTOPILOT_CMD;
+  let ok=false;
+  try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(AUTOPILOT_CMD);ok=true}}catch(_){}
+  if(!ok){box.style.display="block";ta.focus();ta.select();try{ok=document.execCommand("copy")}catch(_){}}
+  const btn=document.getElementById("autopilot"); if(btn)btn.textContent=ok?"Copied ✓ paste in your terminal":"Copy the command below";
+  window._copied=ok;
+  setTimeout(()=>{const x=document.getElementById("autopilot");if(x)x.textContent="Run it with Autopilot"},4000);
+});
 // ---- Wallet X-Ray ----
 async function gql(q){const r=await fetch(GQL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({query:q})});return (await r.json()).data}
 const bySym=()=>Object.fromEntries(last.map(r=>[r.sym,r]));
@@ -238,7 +270,7 @@ document.getElementById("share").onclick=()=>{
   const x=window._xr; const u=new URL(location.href);
   let text;
   if(x){text=`X-Ray of ${x.addr.slice(0,6)}…${x.addr.slice(-4)} on @DreamDEXSomnia perps: ${x.rows} positions, $${Math.round(x.gross).toLocaleString()} gross, funding ${x.fday>=0?"+":""}${x.fday.toFixed(2)} USDso/day. Check any wallet:`}
-  else{const c=document.getElementById("carry").innerText.replace(/\s+/g," ").trim();text=`Live on @DreamDEXSomnia perps: ${c}. All 21 markets, no wallet needed:`}
+  else{const c=(window._carryText||document.getElementById("carry").innerText).replace(/\s+/g," ").trim();text=`Live on @DreamDEXSomnia perps: ${c}. All 21 markets, no wallet needed:`}
   window.open("https://twitter.com/intent/tweet?text="+encodeURIComponent(text)+"&url="+encodeURIComponent(u.toString()),"_blank","noopener");
 };
 const _origRender=render; render=function(){_origRender();renderCarry()};
@@ -266,7 +298,7 @@ function aggregate(ps){
     const ratePer8h=Number(m.fundingRate||0)/1e18*(28800/(Number(m.fundingWindowSec)||28800));
     const a=acc[p.account]||(acc[p.account]={addr:p.account,fday:0,gross:0,net:0,legs:0,big:null});
     a.fday+=-sgn*ratePer8h*notional*3; a.gross+=notional; a.net+=sgn*notional; a.legs++;
-    if(!a.big||notional>a.big.n)a.big={n:notional,txt:`${m.baseSymbol} ${p.isLong?"long":"short"}`};
+    if(!a.big||notional>a.big.n)a.big={n:notional,sym:m.baseSymbol,txt:`${m.baseSymbol} ${p.isLong?"long":"short"}`};
   }
   return Object.values(acc).sort((x,y)=>y.fday-x.fday);
 }
