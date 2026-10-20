@@ -8,3 +8,12 @@
 {"t":"2026-10-20T14:40:35.070Z","kind":"hold","symbol":"BTC/USDso:USDso","side":"short","contracts":0.0012,"uPnl":0.16869111573505213,"apr":1.3265629077736538}
 {"t":"2026-10-20T14:39:00Z","kind":"trade","symbol":"BTC/USDso:USDso","side":"short","why":"open carry 132.7% APR","quantity":0.0012,"filled":0.0012,"entry":83209.2,"hash":"0x92e9cf8ebd54b7345a408ec4cea11cb9321572045b70585e44e498463e41d47f","block":28552745,"note":"backfilled from indexer: the live tick crashed while logging a BigInt orderId after the order filled; fixed in tick.ts"}
 {"t":"2026-10-20T14:39:00Z","kind":"trade","symbol":"LIT/USDso:USDso","side":"long","why":"open carry -28.8% APR","quantity":29.8,"filled":29.8,"entry":3.3474,"hash":"0xd1b752fb21a8119e6c57900b226d1463ff081d2d83372871df3c633e1aa1b877","block":28552762,"note":"backfilled from indexer"}
+{"t":"2026-10-20T18:49:00.986Z","kind":"tick","live":true,"account":"0xEe38f68D3a475d112f82B8a69eE79477bAFEab89","markets":21,"tradingKey":true}
+{"t":"2026-10-20T18:49:01.455Z","kind":"target","net":0,"legs":["short BTC/USDso:USDso 132.4%","long LIT/USDso:USDso -35.9%"]}
+{"t":"2026-10-20T18:49:04.131Z","kind":"trade","symbol":"LIT/USDso:USDso","side":"short","why":"close (stop-loss -4.97%)","price":3.1791,"quantity":29.8,"filled":29.8,"hash":"0xa59c900f5f88f5fba9996b4103180fa224ed358715a0c25e411f6b5fbb73903a","orderId":"36893488147419657711"}
+{"t":"2026-10-20T18:49:04.131Z","kind":"hold","symbol":"BTC/USDso:USDso","side":"short","contracts":0.0012,"uPnl":0.9576448863296653,"apr":1.3235181137246892}
+{"t":"2026-10-20T18:49:05.699Z","kind":"trade","symbol":"LIT/USDso:USDso","side":"long","why":"open carry -35.9% APR","price":3.1983,"quantity":31.3,"filled":31.3,"hash":"0x49ff342d0ec1b103c74201880e137177176d6b3093b3b8b887617de4b53fb307","orderId":"36893488147419657726"}
+{"t":"2026-10-20T18:49:45.694Z","kind":"tick","live":false,"account":"0xEe38f68D3a475d112f82B8a69eE79477bAFEab89","markets":21,"tradingKey":true}
+{"t":"2026-10-20T18:49:46.321Z","kind":"target","net":0,"legs":["short BTC/USDso:USDso 132.4%","long LIT/USDso:USDso -35.9%"]}
+{"t":"2026-10-20T18:49:46.944Z","kind":"hold","symbol":"LIT/USDso:USDso","side":"long","contracts":31.3,"uPnl":-0.12356167677649736,"apr":-0.359267256803413}
+{"t":"2026-10-20T18:49:46.945Z","kind":"hold","symbol":"BTC/USDso:USDso","side":"short","contracts":0.0012,"uPnl":0.9739974869309691,"apr":1.3235181137246892}
