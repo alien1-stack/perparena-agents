@@ -43,4 +43,7 @@ Update `run-a-quoting-loop.md`, `handle-errors.md`, `ENGINE.md` and the `Contrac
 Output above, and `009-repro.mts` in this folder.
 
 ## Environment
-@somnia-chain/markets-sdk 0.32.1, Node 22, Somnia Tokyo testnet (chain 50383), RPC https://api.hideki2.infra.testnet.somnia.network, indexer https://hideki-dev.smk.somnia.host/v1/graphql, read-only.
+- SDK: @somnia-chain/markets-sdk 0.32.1
+- Network: Somnia Tokyo testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network)
+- Wallet: n/a (read-only repro, no account needed)
+- Other: Node 22, indexer https://hideki-dev.smk.somnia.host/v1/graphql, read-only.
