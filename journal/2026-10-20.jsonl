@@ -1,0 +1,10 @@
+{"t":"2026-10-20T14:38:41.201Z","kind":"tick","live":false,"account":"0xEe38f68D3a475d112f82B8a69eE79477bAFEab89","markets":21,"tradingKey":true}
+{"t":"2026-10-20T14:38:41.683Z","kind":"target","net":0,"legs":["short BTC/USDso:USDso 132.7%","long LIT/USDso:USDso -28.8%"]}
+{"t":"2026-10-20T14:38:42.411Z","kind":"dry-run","symbol":"BTC/USDso:USDso","side":"short","why":"open carry 132.7% APR","price":82826.8,"quantity":0.0012}
+{"t":"2026-10-20T14:38:42.736Z","kind":"dry-run","symbol":"LIT/USDso:USDso","side":"long","why":"open carry -28.8% APR","price":3.3694,"quantity":29.7}
+{"t":"2026-10-20T14:40:33.921Z","kind":"tick","live":false,"account":"0xEe38f68D3a475d112f82B8a69eE79477bAFEab89","markets":21,"tradingKey":true}
+{"t":"2026-10-20T14:40:34.445Z","kind":"target","net":0,"legs":["short BTC/USDso:USDso 132.7%","long LIT/USDso:USDso -28.8%"]}
+{"t":"2026-10-20T14:40:35.070Z","kind":"hold","symbol":"LIT/USDso:USDso","side":"long","contracts":29.8,"uPnl":-0.1988857437605928,"apr":-0.2880783531677315}
+{"t":"2026-10-20T14:40:35.070Z","kind":"hold","symbol":"BTC/USDso:USDso","side":"short","contracts":0.0012,"uPnl":0.16869111573505213,"apr":1.3265629077736538}
+{"t":"2026-10-20T14:45:00Z","kind":"trade","symbol":"BTC/USDso:USDso","side":"short","why":"open carry 132.7% APR","quantity":0.0012,"filled":0.0012,"entry":83209.2,"hash":"0x92e9cf8ebd54b7345a408ec4cea11cb9321572045b70585e44e498463e41d47f","block":28552745,"note":"backfilled from indexer: the live tick crashed while logging a BigInt orderId after the order filled; fixed in tick.ts"}
+{"t":"2026-10-20T14:45:00Z","kind":"trade","symbol":"LIT/USDso:USDso","side":"long","why":"open carry -28.8% APR","quantity":29.8,"filled":29.8,"entry":3.3474,"hash":"0xd1b752fb21a8119e6c57900b226d1463ff081d2d83372871df3c633e1aa1b877","block":28552762,"note":"backfilled from indexer"}
