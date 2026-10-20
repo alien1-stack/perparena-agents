@@ -39,4 +39,7 @@ const px = (v: number) => (Math.abs(v) >= 1 ? v.toFixed(2) : v.toPrecision(4));
 Suggested fix: format with the market's tick decimals (`formatUnits(tickSize, 18)` is already computed on the same line).
 
 ## Environment
-dreamdex-bot-kit @ 25798660 (2026-10-12), @somnia-chain/markets-sdk 0.32.1, Somnia testnet (chain 50383), Node v22.22.0, 2026-10-20.
+- SDK: @somnia-chain/markets-sdk 0.32.1
+- Network: Somnia Tokyo testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network)
+- Wallet: n/a (read-only repro, no account needed)
+- Other: dreamdex-bot-kit commit 25798660 (2026-10-12), Node v22.22.0, 2026-10-20.
