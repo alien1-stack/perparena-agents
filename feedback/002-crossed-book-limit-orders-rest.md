@@ -135,4 +135,7 @@ PerpOrderRejection(where:{pool:{_eq:"0x1cd15ae8..."}}) -> owner 0xe8c0d36d69a10b
 ```
 
 ## Environment
-@somnia-chain/markets-sdk 0.32.1, viem 2.x, Somnia testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network), Node v22.22.0, 2026-10-20 (07:40–07:50 UTC). Read-only; no transactions sent.
+- SDK: @somnia-chain/markets-sdk 0.32.1
+- Network: Somnia Tokyo testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network)
+- Wallet: n/a (read-only repro, no account needed)
+- Other: viem 2.x, Node v22.22.0, 2026-10-20 (07:40–07:50 UTC). Read-only; no transactions sent.
