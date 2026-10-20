@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arena Autopilot</title>
+<meta name="description" content="A delta-capped funding-carry bot on dreamDEX perps, running on GitHub Actions. Live book, funding board and every trade with its tx hash.">
+<meta property="og:title" content="Arena Autopilot: funding carry on dreamDEX perps">
+<meta property="og:description" content="Live book, funding board and every trade with its tx hash.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f6f5fb;--ink:#15122b;--mute:#6b6688;--card:#fff;--line:#e4e1f0;--pos:#0f8a5f;--neg:#c2364b;--acc:#5b4bff}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0b0a14;--ink:#f3f0ff;--mute:#9a95b8;--card:#15132a;--line:#262347;--pos:#3ddc97;--neg:#ff6b81;--acc:#a99cff}}
+  :root[data-theme="dark"]{--bg:#0b0a14;--ink:#f3f0ff;--mute:#9a95b8;--card:#15132a;--line:#262347;--pos:#3ddc97;--neg:#ff6b81;--acc:#a99cff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Geist,system-ui,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 16px 64px}
+  h1{font-size:clamp(28px,5vw,40px);margin:0 0 4px;letter-spacing:-.02em}
+  .sub{color:var(--mute);margin:0 0 24px}
+  .mono{font-family:"Geist Mono",monospace}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .kpi b{display:block;font-size:22px;font-family:"Geist Mono",monospace;font-weight:500}
+  .kpi span{color:var(--mute);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;overflow-x:auto}
+  h2{font-size:15px;margin:0 0 10px;color:var(--mute);font-weight:500;text-transform:uppercase;letter-spacing:.08em}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--mute);font-weight:500;font-size:12px}
+  td.num{font-family:"Geist Mono",monospace;text-align:right}
+  .pos{color:var(--pos)} .neg{color:var(--neg)}
+  .tag{font-family:"Geist Mono",monospace;font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line)}
+  .hash{font-family:"Geist Mono",monospace;font-size:12px;color:var(--acc);cursor:pointer}
+  .empty{color:var(--mute);padding:8px}
+  footer{color:var(--mute);font-size:13px;margin-top:24px}
+  a{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Arena Autopilot</h1>
+  <p class="sub">Funding carry across every dreamDEX perp market on Somnia testnet. It holds the side funding pays and keeps long/short exposure balanced. It runs every 10 minutes on GitHub Actions, so there's no server. <span id="mode" class="tag"></span></p>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section><h2>Open book</h2><div id="book"></div></section>
+  <section><h2>Funding board (annualised, live from the pools)</h2><div id="funding"></div></section>
+  <section><h2>Trades (each one is an on-chain tx; click a hash to copy it)</h2><div id="trades"></div></section>
+
+  <footer>Data: <a href="data.json">data.json</a> · <a href="trades.json">trades.json</a> · updated <span id="upd" class="mono"></span>. Testnet paper money, not financial advice.</footer>
+</div>
+<script>
+const fmt=(n,d=2)=>n==null||isNaN(n)?"–":Number(n).toLocaleString("en-US",{maximumFractionDigits:d,minimumFractionDigits:d});
+const pct=a=>`${a>=0?"+":""}${fmt(a*100,1)}%`;
+const cls=n=>n>0?"pos":n<0?"neg":"";
+const short=s=>String(s).split("/")[0];
+function table(head,rows){if(!rows.length)return '<div class="empty">Nothing yet.</div>';return `<table><thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.join("")}</tr>`).join("")}</tbody></table>`}
+async function load(){
+  let d={},t=[];
+  try{d=await (await fetch("data.json",{cache:"no-store"})).json()}catch(e){}
+  try{t=await (await fetch("trades.json",{cache:"no-store"})).json()}catch(e){}
+  document.getElementById("mode").textContent=d.live?"LIVE on testnet":"dry run";
+  document.getElementById("upd").textContent=d.updatedAt?new Date(d.updatedAt).toUTCString():"never";
+  const pos=d.positions||[];const upnl=pos.reduce((s,p)=>s+(p.uPnl||0),0);
+  const net=pos.reduce((s,p)=>s+(p.side==="long"?1:-1)*p.contracts*(p.mark||p.entry||0),0);
+  const carry=pos.reduce((s,p)=>{const f=(d.funding||[]).find(x=>x.symbol===p.symbol);if(!f)return s;const gets=f.paidSide===p.side?1:-1;return s+gets*Math.abs(f.apr)*p.contracts*(p.mark||p.entry||0)/365},0);
+  const k=[["Equity (USDso)",fmt(d.margin?.equity)],["Open legs",pos.length],["Unrealised PnL",`<span class="${cls(upnl)}">${fmt(upnl)}</span>`],["Net exposure",fmt(net)],["Est. funding / day",`<span class="${cls(carry)}">${fmt(carry)}</span>`],["Trades logged",t.length]];
+  document.getElementById("kpis").innerHTML=k.map(([a,b])=>`<div class="kpi"><span>${a}</span><b>${b}</b></div>`).join("");
+  document.getElementById("book").innerHTML=table(["Market","Side","Size","Entry","Mark","uPnL"],pos.map(p=>[`<td>${short(p.symbol)}</td>`,`<td><span class="tag">${p.side}</span></td>`,`<td class="num">${fmt(p.contracts,4)}</td>`,`<td class="num">${fmt(p.entry,4)}</td>`,`<td class="num">${fmt(p.mark,4)}</td>`,`<td class="num ${cls(p.uPnl)}">${fmt(p.uPnl)}</td>`]));
+  const tgt=new Set((d.target||[]).map(x=>x.symbol));
+  document.getElementById("funding").innerHTML=table(["Market","Funding APR","Paid side","Mark","In target"],(d.funding||[]).map(f=>[`<td>${short(f.symbol)}</td>`,`<td class="num ${cls(Math.abs(f.apr)>=0.15?1:0)}">${pct(f.apr)}</td>`,`<td>${f.paidSide}</td>`,`<td class="num">${fmt(f.mark,4)}</td>`,`<td>${tgt.has(f.symbol)?"●":""}</td>`]));
+  document.getElementById("trades").innerHTML=table(["Time (UTC)","Market","Side","Qty","Filled","Price","Why","Tx"],t.map(x=>[`<td class="mono">${(x.t||"").replace("T"," ").slice(0,16)}</td>`,`<td>${short(x.symbol)}</td>`,`<td>${x.side}</td>`,`<td class="num">${fmt(x.quantity,4)}</td>`,`<td class="num">${fmt(x.filled,4)}</td>`,`<td class="num">${fmt(x.price,4)}</td>`,`<td>${x.why||""}</td>`,`<td>${x.hash?`<span class="hash" title="${x.hash}" onclick="navigator.clipboard&&navigator.clipboard.writeText('${x.hash}')">${x.hash.slice(0,10)}…</span>`:"–"}</td>`]));
+}
+load();setInterval(load,60000);
+</script>
+</body>
+</html>

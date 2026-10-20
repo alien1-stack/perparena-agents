@@ -1,0 +1,17 @@
+{
+  "MOMENTUM": {
+    "trades": 3,
+    "wins": 2,
+    "losses": 1
+  },
+  "MEAN_REVERSION": {
+    "trades": 12,
+    "wins": 5,
+    "losses": 7
+  },
+  "GRID": {
+    "trades": 32,
+    "wins": 20,
+    "losses": 12
+  }
+}

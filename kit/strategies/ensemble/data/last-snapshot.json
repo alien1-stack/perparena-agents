@@ -1,0 +1,50 @@
+{
+  "at": "2026-10-20T07:50:00.000Z",
+  "signals": [
+    {
+      "strategy": "MOMENTUM",
+      "signal": "HOLD",
+      "confidence": 0,
+      "reason": "No clear momentum (SIDEWAYS, -0.41%)",
+      "extras": {
+        "momentum": -0.004113779183486523,
+        "breakout": false,
+        "direction": "SIDEWAYS"
+      }
+    },
+    {
+      "strategy": "MEAN_REVERSION",
+      "signal": "BUY",
+      "confidence": 0.5004668534080736,
+      "reason": "Near oversold RSI 17 near lower band",
+      "extras": {
+        "rsi": 17.483660130717425,
+        "lower": 2385.883656508062,
+        "upper": 2400.146343491937
+      }
+    },
+    {
+      "strategy": "GRID",
+      "signal": "BUY",
+      "confidence": 0.85,
+      "reason": "Price at 0% of range, near bottom",
+      "extras": {
+        "positionInRange": 0,
+        "rangeLow": 2386.34,
+        "rangeHigh": 2410.59,
+        "rangePercent": 1.0162005414148862
+      }
+    }
+  ],
+  "decision": {
+    "action": "BUY",
+    "strategy": "GRID",
+    "price": 2387.53317,
+    "amount": 0.010471058712034563,
+    "stopLoss": 2363.6578383,
+    "takeProfit": 2416.18356804,
+    "confidence": 0.85,
+    "reasoning": "Majority vote → BUY via GRID: Price at 0% of range, near bottom",
+    "source": "vote"
+  }
+}

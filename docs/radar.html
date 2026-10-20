@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perps Radar</title>
+<meta name="description" content="Live health board for every dreamDEX perp market on Somnia testnet: funding APR, open-interest cap, spread and crossed-book alerts. Read straight from the chain in your browser.">
+<meta property="og:title" content="Perps Radar: live health of every dreamDEX perp market">
+<meta property="og:description" content="Funding carry, open-interest caps and crossed-book alerts, read straight from Somnia testnet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f6f5fb;--ink:#15122b;--mute:#6b6688;--card:#fff;--line:#e4e1f0;--pos:#0f8a5f;--neg:#c2364b;--warn:#b7791f;--acc:#5b4bff;--track:#ece9f7}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0b0a14;--ink:#f3f0ff;--mute:#9a95b8;--card:#15132a;--line:#262347;--pos:#3ddc97;--neg:#ff6b81;--warn:#f6c25b;--acc:#a99cff;--track:#221f3d}}
+  :root[data-theme="dark"]{--bg:#0b0a14;--ink:#f3f0ff;--mute:#9a95b8;--card:#15132a;--line:#262347;--pos:#3ddc97;--neg:#ff6b81;--warn:#f6c25b;--acc:#a99cff;--track:#221f3d}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Geist,system-ui,sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 16px 64px}
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:end;justify-content:space-between;margin-bottom:18px}
+  h1{font-size:clamp(28px,5vw,40px);margin:0;letter-spacing:-.02em}
+  .sub{color:var(--mute);margin:4px 0 0;max-width:680px}
+  .live{font-family:"Geist Mono",monospace;font-size:12px;color:var(--mute)}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--pos);margin-right:6px;animation:p 1.6s infinite}
+  @keyframes p{50%{opacity:.3}}
+  .alerts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:0 0 16px}
+  .alert{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .alert b{font-family:"Geist Mono",monospace;font-size:22px;font-weight:500;display:block}
+  .alert span{font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
+  .alert.bad b{color:var(--neg)} .alert.warn b{color:var(--warn)} .alert.good b{color:var(--pos)}
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 6px 2px;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:right}
+  th{color:var(--mute);font-weight:500;font-size:12px;cursor:pointer;user-select:none}
+  th:first-child,td:first-child{text-align:left}
+  td{font-family:"Geist Mono",monospace}
+  td.sym{font-family:Geist,system-ui,sans-serif;font-weight:600}
+  .pos{color:var(--pos)} .neg{color:var(--neg)} .warn{color:var(--warn)}
+  .bar{position:relative;width:120px;height:8px;background:var(--track);border-radius:99px;display:inline-block;vertical-align:middle;margin-left:8px}
+  .bar i{position:absolute;inset:0 auto 0 0;border-radius:99px;background:var(--acc)}
+  .bar.hot i{background:var(--neg)} .bar.warm i{background:var(--warn)}
+  .pill{font-family:Geist,system-ui,sans-serif;font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid currentColor}
+  footer{color:var(--mute);font-size:13px;margin-top:18px;line-height:1.6}
+  a{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Perps Radar</h1>
+      <p class="sub">Every dreamDEX perp market on Somnia testnet, read straight from the chain by your browser. No server, no key, no wallet. Funding carry, open-interest cap pressure, live spread, and an alert whenever a book is <b>crossed</b>.</p>
+    </div>
+    <div class="live"><span class="dot"></span><span id="status">connecting…</span></div>
+  </header>
+  <div class="alerts" id="alerts"></div>
+  <section><table><thead><tr id="head"></tr></thead><tbody id="rows"></tbody></table></section>
+  <footer>
+    <b>How to read it.</b> <i>Funding APR</i>: the 8-hour rate annualised; positive means longs pay shorts. <i>OI cap</i>: open interest as a share of the market-wide cap. Near 100%, new exposure stops filling, and we have <a href="https://github.com/alien1-stack/alien1-stack/tree/main/dreamdex-feedback">seen books stay crossed</a> there. <i>Spread</i>: best ask minus best bid in basis points of the mid; negative means crossed.<br>
+    Data: chain RPC <span class="live">api.hideki2.infra.testnet.somnia.network</span> (books, OI, caps) + markets indexer (list, funding). It refreshes every 15 s. Testnet only, not financial advice. Built by day1onearth for the dreamDEX Perps Builder Bounty.
+  </footer>
+</div>
+<script>
+const RPC="https://api.hideki2.infra.testnet.somnia.network";
+const GQL="https://hideki-dev.smk.somnia.host/v1/graphql";
+const SEL={book:"0x4f1ce9a7",oi:"0xbb24882e",params:"0x35a15b24"};
+const pad=(v)=>BigInt(v).toString(16).padStart(64,"0");
+let rid=1;
+async function rpcBatch(calls){
+  const body=calls.map(c=>({jsonrpc:"2.0",id:rid++,method:"eth_call",params:[{to:c.to,data:c.data},"latest"]}));
+  const r=await fetch(RPC,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+  const out=await r.json(); const byId=new Map(out.map(x=>[x.id,x.result]));
+  return body.map(b=>byId.get(b.id));
+}
+const words=(hex)=>{hex=(hex||"0x").slice(2);const w=[];for(let i=0;i<hex.length;i+=64)w.push(BigInt("0x"+hex.slice(i,i+64)));return w};
+function decodeLevels(hex){const w=words(hex);if(w.length<2)return[];const n=Number(w[1]);const lv=[];for(let i=0;i<n;i++)lv.push({price:w[2+2*i],qty:w[3+2*i]});return lv}
+const toNum=(raw,dec)=>Number(raw)/10**dec;
+let markets=[],sortKey="oiPct",sortDir=-1,last=[];
+async function loadMarkets(){
+  const q='{ Market(where:{marketType:{_eq:"PERP"}}){ poolAddress baseSymbol baseDecimals markPrice fundingRate fundingWindowSec initialMarginBps } }';
+  const r=await fetch(GQL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({query:q})});
+  const j=await r.json(); markets=(j.data&&j.data.Market)||[];
+}
+async function tick(){
+  try{
+    if(!markets.length) await loadMarkets();
+    const calls=[];
+    for(const m of markets){
+      calls.push({to:m.poolAddress,data:SEL.book+pad(1)+pad(1)});
+      calls.push({to:m.poolAddress,data:SEL.book+pad(0)+pad(1)});
+      calls.push({to:m.poolAddress,data:SEL.oi});
+      calls.push({to:m.poolAddress,data:SEL.params});
+    }
+    const res=await rpcBatch(calls);
+    last=markets.map((m,i)=>{
+      const [b,a,oi,pp]=res.slice(4*i,4*i+4);
+      const bid=decodeLevels(b)[0],ask=decodeLevels(a)[0];
+      const bidPx=bid?Number(bid.price)/1e18:null, askPx=ask?Number(ask.price)/1e18:null;
+      const mid=bid&&ask?(bidPx+askPx)/2:(bidPx||askPx);
+      const spreadBps=bid&&ask?((askPx-bidPx)/mid)*1e4:null;
+      const oiN=toNum(words(oi)[0]||0n,m.baseDecimals), maxOI=toNum(words(pp)[3]||0n,m.baseDecimals);
+      const window=Number(m.fundingWindowSec)||28800;
+      const apr=(Number(m.fundingRate||0)/1e18)*(365*86400/window);
+      return {sym:m.baseSymbol,bid:bidPx,ask:askPx,mid,spreadBps,crossed:spreadBps!==null&&spreadBps<0,oi:oiN,maxOI,oiPct:maxOI>0?oiN/maxOI*100:0,apr,lev:10000/(m.initialMarginBps||10000),notionalOI:oiN*(mid||0)};
+    });
+    render();
+    document.getElementById("status").textContent=`live · ${markets.length} markets · ${new Date().toLocaleTimeString()}`;
+  }catch(e){document.getElementById("status").textContent="RPC unreachable, retrying…"}
+}
+const cols=[["sym","Market"],["mid","Mid"],["spreadBps","Spread (bps)"],["apr","Funding APR"],["oiPct","OI vs cap"],["notionalOI","OI (USDso)"],["lev","Max lev"]];
+function render(){
+  const crossed=last.filter(r=>r.crossed), capped=last.filter(r=>r.oiPct>=95);
+  const best=[...last].sort((a,b)=>Math.abs(b.apr)-Math.abs(a.apr))[0];
+  const totalOI=last.reduce((s,r)=>s+r.notionalOI,0);
+  document.getElementById("alerts").innerHTML=[
+    [`${crossed.length}`,"crossed books",crossed.length?"bad":"good",crossed.map(r=>r.sym).join(", ")],
+    [`${capped.length}`,"markets ≥95% of OI cap",capped.length?"warn":"good",capped.map(r=>r.sym).join(", ")],
+    [best?`${(best.apr*100).toFixed(1)}%`:"–","best funding carry","good",best?`${best.apr>0?"short":"long"} ${best.sym} gets paid`:""],
+    [`$${Math.round(totalOI).toLocaleString()}`,"total open interest","",""]
+  ].map(([v,l,c,d])=>`<div class="alert ${c}"><span>${l}</span><b>${v}</b><span style="text-transform:none;letter-spacing:0">${d}</span></div>`).join("");
+  document.getElementById("head").innerHTML=cols.map(([k,l])=>`<th data-k="${k}">${l}${sortKey===k?(sortDir<0?" ↓":" ↑"):""}</th>`).join("");
+  const rows=[...last].sort((a,b)=>{const x=a[sortKey],y=b[sortKey];if(typeof x==="string")return sortDir*x.localeCompare(y);return sortDir*((x??-1e18)-(y??-1e18))});
+  const fp=(v)=>v==null?"–":v>=1000?v.toLocaleString("en-US",{maximumFractionDigits:1}):v>=1?v.toFixed(4):v.toPrecision(4);
+  document.getElementById("rows").innerHTML=rows.map(r=>{
+    const sp=r.spreadBps==null?"–":(r.crossed?`<span class="pill neg">CROSSED ${r.spreadBps.toFixed(1)}</span>`:r.spreadBps.toFixed(1));
+    const cls=r.oiPct>=95?"hot":r.oiPct>=70?"warm":"";
+    return `<tr><td class="sym">${r.sym}</td><td>${fp(r.mid)}</td><td>${sp}</td><td class="${Math.abs(r.apr)>=0.15?(r.apr>0?"neg":"pos"):""}">${(r.apr*100).toFixed(1)}%</td><td>${r.oiPct.toFixed(1)}%<span class="bar ${cls}"><i style="width:${Math.min(100,r.oiPct)}%"></i></span></td><td>${Math.round(r.notionalOI).toLocaleString()}</td><td>${r.lev.toFixed(0)}x</td></tr>`}).join("");
+  document.querySelectorAll("th").forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1}render()});
+}
+tick();setInterval(tick,15000);setInterval(()=>{markets=[]},600000);
+</script>
+</body>
+</html>
