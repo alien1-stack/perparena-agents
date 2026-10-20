@@ -54,9 +54,34 @@ The correlation with pnl/equity is only as high as it is because, at one mark, l
 ## Suggested fix
 Change the trader docs to the real rule, for example: "ADL reduces profitable positions on the opposite side of the same market, the most leveraged first (position value relative to the account's equity). Being in profit makes a position eligible; how much profit does not move it up the queue." If the profit-weighted order is the intended design, change the ranker instead (for example score `pnl% × leverage`, as most venues do).
 
+## Related: BTC long side exceeds the ADL scan cap
+(Merged from our former item 020; same docs paragraph.) The "most ... first" order and the ADL bars do not apply at all to a side with more holders than `LiquidationEngine.getMaxAdlScanPerCall()`. The SDK says such a side "is walked in storage order and the ranker is never called" (`src/readsAbi.ts:560-561`, `docs/PERPS.md:380-382`, the `storageOrder` regime in `src/perp/adl.ts:180-182`). The trader page does not mention it.
+
+- `getMaxAdlScanPerCall()` = **500**. The BTC long holder list (`MarginBank.getSideHolderStatesPaginated(BTC, true, …).listLength`) has **5,157** entries (run of 2026-10-20, head 28,608,486). It is the only one of the 42 sides over the cap.
+- `perpAdlQueue.getSnapshot({ pool: BTC, isLong: true })` returns `regime: "storageOrder"` with no holders and no ranks, so an app has nothing to draw the five ADL bars from on that side.
+- In storage order the first candidate was a 0.89x account at slot 38 (pnl/equity 0.007), the most leveraged long (17.8x) was at slot 4,002, and 14 of the 20 highest pnl/equity longs sat past slot 500.
+- We did not see an ADL happen (no ADL rows in the indexer). The storage-order behaviour is the SDK's description of the engine; the holder count and the cap are read from the chain.
+
+Repro: `npx tsx 019-repro-b.mts` (read-only, view calls only; byte-identical to the former `020-repro.mts`). Re-run 2026-10-20, head 28,794,534:
+```
+LiquidationEngine.getMaxAdlScanPerCall() = 500; ranker 0x3d7466A217e375635386d3c5da30a82959DdB789
+sides with more holders than the scan cap (42 sides checked): BTC long: 5239 holders
+BTC long holder list: 5239 entries; flat 0, not in profit 661, no equity 0, unpriceable 0, ADL candidates 4578 (244 of them in the first 500 storage slots)
+  first candidate in storage order: slot 4 0x5c693d3D7DaCFd71F6F70A0cB6010A773e004d68 pnl/equity 0.0016 leverage 0.33x
+  highest leverage candidate:       slot 563 0xf5c57d114c12ABA9bCe3dBcDC3aa0150B4F14fcD pnl/equity 0.0231 leverage 17.04x
+  highest pnl/equity candidate:     slot 669 0xBA2D7748400357a2b159A4e5Eda8f3B5fBf6E8e1 pnl/equity 0.2950 leverage 11.75x
+  top-20 candidates by pnl/equity that sit past slot 500: 14/20
+SDK perpAdlQueue.getSnapshot(BTC long): regime "storageOrder", holderCount 5239, scanCap 500, holders listed: none
+```
+Suggested docs addition: "A side with more than `getMaxAdlScanPerCall()` holders is deleveraged in holder-list order and has no ADL rank", and show that in the ADL column instead of the five bars. Protocol alternative: raise `maxAdlScanPerCall` above the largest side, or rank in pages.
+
 ## Evidence
 - Repro script: `019-repro.mts` in this folder (read-only: `eth_call`, `eth_getLogs` and indexer queries; it signs nothing). Run with `npx tsx 019-repro.mts` from a project with `@somnia-chain/markets-sdk@0.32.1` installed. The output under **Actual** comes from two separate runs.
 - Blocks: 28611101
+- Related section: `019-repro-b.mts` in this folder (same run instructions). Re-run of `019-repro.mts` on 2026-10-20 at head 28,794,534 gave the same ranker answer `[1,0]` (B first) and leverage correlations of 0.998 to 1.000 on all six sides.
 
 ## Environment
-@somnia-chain/markets-sdk 0.32.1, Node 22, Somnia Tokyo testnet (chain 50383), RPC https://api.hideki2.infra.testnet.somnia.network, indexer https://hideki-dev.smk.somnia.host/v1/graphql, LiquidationEngine 0xA66d3C24Ad4a389d863846905D8173e1017e9F4D, AdlRanker 0x3d7466A217e375635386d3c5da30a82959DdB789, read-only (no wallet, no transactions).
+- SDK: @somnia-chain/markets-sdk 0.32.1
+- Network: Somnia Tokyo testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network)
+- Wallet: n/a (read-only repro, no account needed)
+- Other: Node 22, indexer https://hideki-dev.smk.somnia.host/v1/graphql, LiquidationEngine 0xA66d3C24Ad4a389d863846905D8173e1017e9F4D, AdlRanker 0x3d7466A217e375635386d3c5da30a82959DdB789, read-only (no wallet, no transactions).
