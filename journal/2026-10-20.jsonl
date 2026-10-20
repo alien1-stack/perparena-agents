@@ -17,3 +17,20 @@
 {"t":"2026-10-20T18:49:46.321Z","kind":"target","net":0,"legs":["short BTC/USDso:USDso 132.4%","long LIT/USDso:USDso -35.9%"]}
 {"t":"2026-10-20T18:49:46.944Z","kind":"hold","symbol":"LIT/USDso:USDso","side":"long","contracts":31.3,"uPnl":-0.12356167677649736,"apr":-0.359267256803413}
 {"t":"2026-10-20T18:49:46.945Z","kind":"hold","symbol":"BTC/USDso:USDso","side":"short","contracts":0.0012,"uPnl":0.9739974869309691,"apr":1.3235181137246892}
+{"t":"2026-10-20T19:01:38.599Z","kind":"tick","live":true,"account":"0xEe38f68D3a475d112f82B8a69eE79477bAFEab89","markets":21,"tradingKey":true}
+{"t":"2026-10-20T19:01:39.061Z","kind":"target","net":0,"legs":["short BTC/USDso:USDso 132.4%","long LIT/USDso:USDso -42.1%"]}
+{"t":"2026-10-20T19:01:39.624Z","kind":"hold","symbol":"LIT/USDso:USDso","side":"long","contracts":31.3,"uPnl":-0.23638093711210378,"apr":-0.4212738105941159}
+{"t":"2026-10-20T19:01:39.624Z","kind":"hold","symbol":"BTC/USDso:USDso","side":"short","contracts":0.0012,"uPnl":0.9329212452953041,"apr":1.3235181137246892}
+{"t":"2026-10-20T19:32:15.323Z","kind":"tick","live":true,"account":"0xEe38f68D3a475d112f82B8a69eE79477bAFEab89","markets":21,"tradingKey":true}
+{"t":"2026-10-20T19:32:15.940Z","kind":"target","net":0,"legs":["short BTC/USDso:USDso 132.7%","long LIT/USDso:USDso -42.1%"]}
+{"t":"2026-10-20T19:32:16.576Z","kind":"hold","symbol":"LIT/USDso:USDso","side":"long","contracts":31.3,"uPnl":-0.5006082556679037,"apr":-0.4212738105941159}
+{"t":"2026-10-20T19:32:16.576Z","kind":"hold","symbol":"BTC/USDso:USDso","side":"short","contracts":0.0012,"uPnl":0.9847371954848756,"apr":1.3273458878624271}
+{"t":"2026-10-20T20:04:34.982Z","kind":"tick","live":true,"account":"0xEe38f68D3a475d112f82B8a69eE79477bAFEab89","markets":21,"tradingKey":true}
+{"t":"2026-10-20T20:04:35.456Z","kind":"target","net":0,"legs":["short BTC/USDso:USDso 132.7%","long LIT/USDso:USDso -42.3%"]}
+{"t":"2026-10-20T20:04:36.008Z","kind":"hold","symbol":"LIT/USDso:USDso","side":"long","contracts":31.3,"uPnl":1.3761485734360976,"apr":-0.42324775097064277}
+{"t":"2026-10-20T20:04:36.009Z","kind":"hold","symbol":"BTC/USDso:USDso","side":"short","contracts":0.0012,"uPnl":0.8734613425014016,"apr":1.3273458878624271}
+{"t":"2026-10-20T20:05:19.242Z","kind":"tick","live":true,"account":"0xEe38f68D3a475d112f82B8a69eE79477bAFEab89","markets":21,"tradingKey":true}
+{"t":"2026-10-20T20:05:19.918Z","kind":"target","net":0,"legs":["short BTC/USDso:USDso 132.7%","long LIT/USDso:USDso -42.3%"]}
+{"t":"2026-10-20T20:05:21.407Z","kind":"hold","symbol":"LIT/USDso:USDso","side":"long","contracts":31.3,"uPnl":1.253098154490393,"apr":-0.42324775097064277}
+{"t":"2026-10-20T20:05:21.407Z","kind":"hold","symbol":"BTC/USDso:USDso","side":"short","contracts":0.0012,"uPnl":0.8909443095153488,"apr":1.3273458878624271}
+{"t":"2026-10-20T20:05:29.062Z","kind":"somnia-agent","mode":"gate","summary":"short BTC/USDso:USDso 100 USDso at +132.7% APR funding, long LIT/USDso:USDso 100 USDso at -42.3% APR funding, net exposure 0 USDso","verdict":"APPROVE","response":"APPROVE: all policy conditions are satisfied (net exposure 0.0% of gross notional, both legs receive funding with positive expected net funding 0.48 USDso/day, max loss 0.8% of equity <= 5%, gross leverage 0.20x <= 3x, all legs fit within pool headroom)","status":"Success","requestId":"17388953","requestTx":"0x2d002ca0a57727696adf87673a3f8fb73f06c3d6050a78ec63ea5a1d417fe32b","resultTx":"0xe8e9a270d98df56ddcc60934da189d59ca0ef1e7bf221136215e5976164711e7","depositStt":"0.24","links":{"requestTx":"https://shannon-explorer.somnia.network/tx/0x2d002ca0a57727696adf87673a3f8fb73f06c3d6050a78ec63ea5a1d417fe32b","resultTx":"https://shannon-explorer.somnia.network/tx/0xe8e9a270d98df56ddcc60934da189d59ca0ef1e7bf221136215e5976164711e7","agentUi":"https://agents.testnet.somnia.network/agent/12847293847561029384","receipts":"https://receipts.testnet.agents.somnia.host/agent-receipts?contractAddress=0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776&requestId=17388953&type=minimal"}}
