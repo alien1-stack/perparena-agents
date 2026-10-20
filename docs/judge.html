@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Judge Mode</title>
+<meta name="description" content="A 60-second guided tour of Arena Autopilot for dreamDEX Perps Builder Bounty judges: live market, the carry decision, the Somnia Agents verdict, live trades with tx hashes, and the feedback track.">
+<meta property="og:title" content="Arena Autopilot: Judge Mode (60-second tour)">
+<meta property="og:description" content="Live market, carry decision, Somnia Agents verdict, live Somnia testnet trades, feedback track. Everything verifiable from the browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f6f5fb;--ink:#15122b;--mute:#6b6688;--card:#fff;--line:#e4e1f0;--pos:#0f8a5f;--neg:#c2364b;--warn:#b7791f;--acc:#5b4bff;--track:#ece9f7;--soft:#f1effa}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0b0a14;--ink:#f3f0ff;--mute:#9a95b8;--card:#15132a;--line:#262347;--pos:#3ddc97;--neg:#ff6b81;--warn:#f6c25b;--acc:#a99cff;--track:#221f3d;--soft:#1b1834}}
+  :root[data-theme="dark"]{--bg:#0b0a14;--ink:#f3f0ff;--mute:#9a95b8;--card:#15132a;--line:#262347;--pos:#3ddc97;--neg:#ff6b81;--warn:#f6c25b;--acc:#a99cff;--track:#221f3d;--soft:#1b1834}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Geist,system-ui,sans-serif}
+  .wrap{max-width:980px;margin:0 auto;padding:28px 16px 64px}
+  a{color:var(--acc)}
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:end;justify-content:space-between;margin-bottom:16px}
+  h1{font-size:clamp(28px,5vw,40px);margin:0;letter-spacing:-.02em}
+  .sub{color:var(--mute);margin:4px 0 0;max-width:640px}
+  .nav{font-size:13px;display:flex;flex-wrap:wrap;gap:4px 12px}
+  .mono,code{font-family:"Geist Mono",monospace}
+  .live{font-family:"Geist Mono",monospace;font-size:12px;color:var(--mute)}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--pos);margin-right:6px;animation:p 1.6s infinite}
+  .dot.off{background:var(--warn);animation:none}
+  @keyframes p{50%{opacity:.3}}
+  .steps{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:0 0 12px}
+  .steps button{all:unset;cursor:pointer;display:block;min-width:0}
+  .steps .bar{display:block;height:6px;border-radius:99px;background:var(--track);overflow:hidden}
+  .steps .bar i{display:block;height:100%;width:0;background:var(--acc)}
+  .steps .lbl{display:block;font-size:11.5px;color:var(--mute);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .steps button[aria-current="step"] .lbl{color:var(--ink);font-weight:600}
+  .steps button:focus-visible{outline:2px solid var(--acc);outline-offset:3px;border-radius:4px}
+  .crit{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+  .crit span{font-size:12px;padding:3px 10px;border-radius:99px;border:1px solid var(--line);color:var(--mute)}
+  .crit span.on{border-color:var(--acc);color:var(--acc);font-weight:600}
+  .stage{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;min-height:420px}
+  .stage h2{font-size:clamp(20px,3.4vw,26px);margin:0 0 4px;letter-spacing:-.01em}
+  .stage .why{color:var(--mute);margin:0 0 14px}
+  .kicker{font:600 11px Geist,system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--acc)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:0 0 14px}
+  .kpi{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+  .kpi span{display:block;font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
+  .kpi b{font:500 20px "Geist Mono",monospace}
+  .kpi small{display:block;color:var(--mute);font-size:12px}
+  .pos{color:var(--pos)} .neg{color:var(--neg)} .warn{color:var(--warn)} .muted{color:var(--mute)}
+  .rows{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .row{display:grid;grid-template-columns:minmax(64px,auto) 1fr auto;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:14px}
+  .row:last-child{border-bottom:0}
+  .row .m{font-weight:600}
+  .row .mono{text-align:right}
+  .fbar{height:8px;background:var(--track);border-radius:99px;position:relative;min-width:0}
+  .fbar i{position:absolute;inset:0 auto 0 0;border-radius:99px;background:var(--acc)}
+  .fbar.s i{background:var(--neg)} .fbar.l i{background:var(--pos)}
+  .pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px;margin:0 0 14px}
+  .leg{border:1px solid var(--line);border-left:4px solid var(--pos);border-radius:10px;padding:10px 12px}
+  .leg b{font:500 18px "Geist Mono",monospace}
+  .verdict{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+  .verdict.ok{border-left:4px solid var(--pos)} .verdict.no{border-left:4px solid var(--neg)}
+  .badge{font:600 11px Geist,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;border:1px solid currentColor}
+  blockquote{margin:8px 0;padding:4px 10px;border-left:3px solid var(--line);font-size:13.5px}
+  .tx{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;margin-top:6px}
+  .tx code{font-size:12px;color:var(--acc);overflow-wrap:anywhere}
+  .chain{font:600 10.5px Geist,system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+  .vout{flex-basis:100%;font-size:12.5px;min-width:0}
+  .vout .ok{color:var(--pos);font-weight:600} .vout .bad{color:var(--neg);font-weight:600}
+  pre{margin:4px 0 0;padding:8px 10px;border-radius:8px;background:var(--soft);font:11.5px/1.45 "Geist Mono",monospace;overflow-x:auto;max-width:100%}
+  button{font:500 13px Geist,system-ui,sans-serif;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+  button:hover{border-color:var(--acc)}
+  button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+  button.sm{font-size:11.5px;padding:2px 9px}
+  .trade{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;min-width:0}
+  .trade .h{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+  .trade .t{font:12px "Geist Mono",monospace;color:var(--mute)}
+  .flag{font-size:13px;margin:10px 0 0;padding:8px 10px;border-radius:8px;background:var(--soft);border-left:3px solid var(--warn)}
+  .fb{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:6px;margin:8px 0 12px}
+  .fb a{display:block;font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);min-width:0}
+  .fb a:hover{border-color:var(--acc)}
+  .fb .n{font:500 12px "Geist Mono",monospace;color:var(--acc);margin-right:6px}
+  .fb .sev{font:600 10px Geist,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--neg);margin-left:4px}
+  .links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .links a{font-size:13.5px;padding:7px 12px;border:1px solid var(--line);border-radius:99px;text-decoration:none}
+  .links a.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+  .ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:12px}
+  .ctrl .mid{display:flex;gap:8px;align-items:center}
+  .ctrl .pos-n{font:500 13px "Geist Mono",monospace;color:var(--mute)}
+  .ctrl button{padding:9px 18px;font-size:14px}
+  .empty{color:var(--mute)}
+  footer{color:var(--mute);font-size:13px;margin-top:20px;line-height:1.6}
+  .hide{display:none}
+  @media (max-width:440px){.ctrl{flex-wrap:nowrap;gap:6px}.ctrl button{padding:8px 12px;font-size:13px;white-space:nowrap}.ctrl .pos-n{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Judge Mode</h1>
+      <p class="sub">Arena Autopilot in 60 seconds: five steps, each backed by live data or an on-chain tx you can check from this page. Use <span class="mono">← →</span> or the buttons.</p>
+    </div>
+    <div>
+      <nav class="nav"><a href="timeline.html">Decision timeline</a><a href="radar.html">Live radar</a><a href="index.html">Bot dashboard</a><a href="https://github.com/alien1-stack/perparena-agents">Repo</a></nav>
+      <div class="live" style="margin-top:4px"><span class="dot off" id="rpcdot"></span><span id="rpc">Tokyo RPC: connecting…</span></div>
+    </div>
+  </header>
+
+  <div class="steps" id="steps" role="tablist"></div>
+  <div class="crit" id="crit"></div>
+  <main class="stage" id="stage" aria-live="polite"></main>
+  <div class="ctrl">
+    <button id="back">← Back</button>
+    <div class="mid"><button id="play">▶ Auto-play 60 s</button><span class="pos-n" id="posn"></span></div>
+    <button id="next" class="pri">Next →</button>
+  </div>
+
+  <footer>Built for the dreamDEX Perps Builder Bounty on Somnia testnet. Data: live indexer + Tokyo RPC (step 1), <a href="data.json">data.json</a> and <a href="trades.json">trades.json</a> written by each bot tick (steps 2, 4), Shannon txs for Somnia Agents (step 3), <code>feedback/INDEX.md</code> (step 5). Testnet paper money, not financial advice.</footer>
+</div>
+<script>
+const REPO="https://github.com/alien1-stack/perparena-agents";
+const RAW="https://raw.githubusercontent.com/alien1-stack/perparena-agents/main/";
+const GQL="https://hideki-dev.smk.somnia.host/v1/graphql";
+const TOKYO={name:"Tokyo",id:50383,rpc:"https://api.hideki2.infra.testnet.somnia.network"};
+const SHANNON={name:"Shannon",id:50312,rpc:"https://api.infra.testnet.somnia.network",tx:"https://shannon-explorer.somnia.network/tx/"};
+const AGENTS="0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776";
+const RECEIPTS=id=>`https://receipts.testnet.agents.somnia.host/agent-receipts?contractAddress=${AGENTS}&type=minimal&requestId=${id}`;
+const BOT_KEY="0x775275ef512e1af016ff6d9df4aa45861670bb47";
+const RADAR_LIVE="https://alien1-stack.github.io/alien1-stack/radar/";
+// README "Live orders on Somnia testnet" table; trades.json rows with the same hash take precedence.
+const README_TRADES=[
+  {t:"2026-10-20T14:39:00Z",side:"short",symbol:"BTC",qty:0.0012,price:83209.2,why:"open carry, funding +132.7% APR paid to shorts",hash:"0x92e9cf8ebd54b7345a408ec4cea11cb9321572045b70585e44e498463e41d47f"},
+  {t:"2026-10-20T14:39:00Z",side:"long",symbol:"LIT",qty:29.8,price:3.3474,why:"open carry, funding −28.8% APR paid to longs",hash:"0xd1b752fb21a8119e6c57900b226d1463ff081d2d83372871df3c633e1aa1b877"},
+  {t:"2026-10-20T18:49:04Z",side:"short",symbol:"LIT",qty:29.8,price:3.18,why:"close long LIT: per-leg stop-loss at −4.97%",hash:"0xa59c900f5f88f5fba9996b4103180fa224ed358715a0c25e411f6b5fbb73903a"},
+  {t:"2026-10-20T18:49:05Z",side:"long",symbol:"LIT",qty:31.3,price:3.20,why:"re-open long LIT: funding still −35.9% APR paid to longs",hash:"0x49ff342d0ec1b103c74201880e137177176d6b3093b3b8b887617de4b53fb307"}
+];
+const VERDICTS=[
+  {n:2,verdict:"APPROVE",book:"short BTC-PERP 100 + long LIT-PERP 100, both receive funding · net 0 · equity 500 · 0.40x gross · max loss 1.6% of equity · within headroom",answer:"APPROVE: All conditions are met: net exposure 0.0% ≤ 10%, both legs receive funding with positive expected net funding 0.61 USDso/day, max loss 1.6% ≤ 5%, gross leverage 0.40x ≤ 3x, and all legs fit within pool headroom.",requestId:"17364977",requestTx:"0x860c0bb1e8a10fe1d83abc2928ab91695b78f920a5bcb5ee8e2f12cb6ca55efb",resultTx:"0x383ecd66486fe8d04ee4658cbbabb1e753e9820c8ea42da5266165b29cb88ff6"},
+  {n:3,verdict:"REJECT",book:"long BTC-PERP 2000 at +180% APR (pays funding) · equity 100 · 20x net long · max loss 80% of equity · over the 1500 USDso headroom",answer:"REJECT: all legs within pool headroom: NO",requestId:"17365010",requestTx:"0xa369d2dd5db9a21e857f1f9e6000d56134122dc91347cde84ba47cc0653cd506",resultTx:"0x1ef58cf47b7f438ca71281bd7a279874a3eab086489a8bcc12e2820d60b080a9"}
+];
+const CRIT=["Clear user value","Repeat-use loop","Technical execution","Evidence of building"];
+const STEPS=[
+  {k:"Live market",crit:[0,1],render:stepMarket},
+  {k:"Carry decision",crit:[0,2],render:stepDecision},
+  {k:"Somnia Agent",crit:[2,3],render:stepAgent},
+  {k:"Live trades",crit:[3,2],render:stepTrades},
+  {k:"Feedback + board",crit:[3,1],render:stepFeedback}
+];
+const STEP_MS=12000;
+
+// ---------- helpers ----------
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>`&#${c.charCodeAt(0)};`);
+const sym=s=>String(s||"").split("/")[0];
+const fmt=(n,d=2)=>n==null||isNaN(n)?"–":Number(n).toLocaleString("en-US",{maximumFractionDigits:d,minimumFractionDigits:d});
+const pctS=(a,d=1)=>`${a>=0?"+":"−"}${Math.abs(a*100).toFixed(d)}%`;
+const utc=t=>new Date(t).toISOString().replace("T"," ").slice(0,19)+" UTC";
+const hhmm=t=>new Date(t).toISOString().slice(11,16);
+const shortH=h=>`${h.slice(0,10)}…${h.slice(-8)}`;
+const shortA=a=>`${a.slice(0,6)}…${a.slice(-4)}`;
+const ago=t=>{const m=Math.round((Date.now()-Date.parse(t))/60000);return m<1?"just now":m<90?`${m} min ago`:m<2880?`${Math.round(m/60)} h ago`:`${Math.round(m/1440)} d ago`};
+const md=s=>esc(s).replace(/`([^`]+)`/g,"<code>$1</code>");
+let rid=1;
+async function rpc(url,calls){
+  const body=calls.map(([method,params])=>({jsonrpc:"2.0",id:rid++,method,params}));
+  const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  const out=await r.json();const by=new Map(out.map(x=>[x.id,x]));
+  return body.map(b=>{const x=by.get(b.id);if(!x||x.error)throw new Error(x?.error?.message||"no result");return x.result});
+}
+async function getJson(p){try{const r=await fetch(p,{cache:"no-store"});if(r.ok)return await r.json()}catch(e){}return null}
+async function getText(path){
+  const order=/github\.io$/.test(location.hostname)?[RAW+path,"../"+path]:["../"+path,RAW+path];
+  for(const u of order){try{const r=await fetch(u,{cache:"no-store"});if(r.ok)return await r.text()}catch(e){}}
+  return null;
+}
+function txLine(hash,chain,label){
+  const c=chain==="shannon"?SHANNON:TOKYO;
+  const code=`<code title="${hash}">${shortH(hash)}</code>`;
+  return `<div class="tx" data-h="${hash}" data-c="${chain}">${label?`<span class="muted" style="font-size:12px">${label}</span>`:""}<span class="chain">${c.name} ${c.id}</span>${chain==="shannon"?`<a href="${SHANNON.tx}${hash}" target="_blank" rel="noopener">${code}</a>`:code}<button class="sm" data-copy="${hash}">Copy</button><button class="sm" data-verify>Verify</button><div class="vout"></div></div>`;
+}
+const curlCmd=(h,c)=>`curl -s -X POST ${c.rpc} \\\n  -H 'content-type: application/json' \\\n  --data '{"jsonrpc":"2.0","id":1,"method":"eth_getTransactionReceipt","params":["${h}"]}'`;
+const VC={};
+async function runVerify(box){
+  const out=box.querySelector(".vout"),h=box.dataset.h,c=box.dataset.c==="shannon"?SHANNON:TOKYO;
+  out.innerHTML='<span class="muted">Calling eth_getTransactionReceipt…</span>';
+  try{
+    let v=VC[h];
+    if(!v){
+      const [r]=await rpc(c.rpc,[["eth_getTransactionReceipt",[h]]]);
+      if(!r){out.innerHTML='<span class="bad">Not found on RPC.</span>';return null}
+      const [b]=await rpc(c.rpc,[["eth_getBlockByNumber",[r.blockNumber,false]]]);
+      let ts=parseInt(b.timestamp,16);if(ts>1e11)ts=Math.floor(ts/1000);
+      v=VC[h]={ok:r.status==="0x1",block:parseInt(r.blockNumber,16),ts:ts*1000,from:r.from,logs:(r.logs||[]).length};
+    }
+    out.innerHTML=`<span class="${v.ok?"ok":"bad"}">${v.ok?"✓ success":"✗ reverted"}</span> · block <span class="mono">${v.block.toLocaleString("en-US")}</span> · ${utc(v.ts)} · from <span class="mono">${shortA(v.from)}</span>${v.from.toLowerCase()===BOT_KEY?" (bot trading key)":""} · ${v.logs} logs`;
+    return v;
+  }catch(e){out.innerHTML=`<span class="warn">RPC unreachable from this browser. Run it yourself:</span><pre>${esc(curlCmd(h,c))}</pre>`;return null}
+}
+function hexToBytes(h){h=h.replace(/^0x/,"");const a=new Uint8Array(h.length/2);for(let i=0;i<a.length;i++)a[i]=parseInt(h.substr(i*2,2),16);return a}
+const word=(a,o)=>{let n=0;for(let i=o;i<o+32;i++)n=n*256+a[i];return n};
+function decodeConsensus(input){const a=hexToBytes(input).slice(4);const off=word(a,32),len=word(a,off),b=a.slice(off+32,off+32+len);const so=word(b,0),sl=word(b,so);return new TextDecoder().decode(b.slice(so+32,so+32+sl))}
+
+// ---------- data ----------
+const D={data:null,trades:null,markets:null,head:null,fb:null};
+async function loadAll(){
+  const [data,trades]=await Promise.all([getJson("data.json"),getJson("trades.json")]);
+  D.data=data;D.trades=trades||[];
+  loadMarkets();loadFeedback();
+  show(cur,false);
+}
+async function loadMarkets(){
+  try{
+    const q='{ Market(where:{marketType:{_eq:"PERP"}}){ baseSymbol markPrice fundingRate fundingWindowSec } }';
+    const r=await fetch(GQL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({query:q})});
+    const j=await r.json();const M=j?.data?.Market;
+    if(!Array.isArray(M)||!M.length)throw new Error("indexer");
+    D.markets={live:true,at:new Date(),list:M.map(m=>({sym:m.baseSymbol,apr:(Number(m.fundingRate||0)/1e18)*(365*86400/(Number(m.fundingWindowSec)||28800)),mark:Number(m.markPrice)/1e18}))};
+  }catch(e){
+    D.markets={live:false,at:D.data?.updatedAt?new Date(D.data.updatedAt):null,list:(D.data?.funding||[]).map(f=>({sym:sym(f.symbol),apr:f.apr,mark:f.mark}))};
+  }
+  if(cur===0)show(0,false);
+}
+async function loadFeedback(){
+  const [idx,com]=await Promise.all([getText("feedback/INDEX.md"),getText("feedback/COMMITMENTS.md")]);
+  if(!idx){D.fb={ok:false};if(cur===4)show(4,false);return}
+  const items=[];
+  for(const line of idx.split("\n")){const m=/^\|\s*\[(\d{3})\]\(([^)]+)\)\s*\|\s*(.+?)\s*\|\s*(major|normal)\s*\|\s*([^|]+?)\s*\|/.exec(line);if(m)items.push({n:m[1],file:m[2],title:m[3],sev:m[4],area:m[5]})}
+  const pub=new Set(items.map(i=>i.n));
+  const committed={};
+  for(const line of (com||"").split("\n")){const m=/^([0-9a-f]{64})\s+item (\d{3}) report/.exec(line);if(m&&!pub.has(m[2]))committed[m[2]]=m[1]}
+  const withdrawn=(idx.match(/^(\d{3}) was withdrawn/m)||[])[1];
+  D.fb={ok:true,items,committed:Object.entries(committed).sort(),withdrawn};
+  if(cur===4)show(4,false);
+}
+
+// ---------- steps ----------
+function stepMarket(){
+  const M=D.markets;
+  if(!M)return `<p class="empty">Reading every dreamDEX perp market from the indexer…</p>`;
+  const L=[...M.list].sort((a,b)=>Math.abs(b.apr)-Math.abs(a.apr));
+  const top=L.slice(0,6),max=Math.max(...top.map(x=>Math.abs(x.apr)),0.0001);
+  const sh=[...L].filter(x=>x.apr>0).sort((a,b)=>b.apr-a.apr)[0],lo=[...L].filter(x=>x.apr<0).sort((a,b)=>a.apr-b.apr)[0];
+  const blended=sh&&lo?(sh.apr+Math.abs(lo.apr))/2:null;
+  return `<div class="kicker">Step 1 · ${M.live?"live from the dreamDEX indexer":"snapshot from the last bot tick (indexer unreachable)"}</div>
+  <h2>${M.list.length} perp markets, ranked by who funding pays</h2>
+  <p class="why">Funding on dreamDEX testnet is lopsided: a few markets pay one side a lot. The radar shows it to anyone, with no wallet, refreshed every 15 s.</p>
+  <div class="kpis">
+    <div class="kpi"><span>Top carry pair</span><b>${sh&&lo?`S ${sh.sym} · L ${lo.sym}`:"–"}</b><small>market-neutral</small></div>
+    <div class="kpi"><span>Blended carry APR</span><b class="pos">${blended!=null?pctS(blended):"–"}</b><small>paid side of both legs</small></div>
+    <div class="kpi"><span>Markets ≥ 15% APR</span><b>${L.filter(x=>Math.abs(x.apr)>=0.15).length}</b><small>bot entry threshold</small></div>
+    <div class="kpi"><span>Tokyo head</span><b>${D.head?`#${D.head.toLocaleString("en-US")}`:"–"}</b><small>chain ${TOKYO.id}</small></div>
+  </div>
+  <div class="rows">${top.map(x=>`<div class="row"><span class="m">${esc(x.sym)}</span><span class="fbar ${x.apr>0?"s":"l"}"><i style="width:${Math.abs(x.apr)/max*100}%"></i></span><span class="mono ${Math.abs(x.apr)>=0.15?(x.apr>0?"neg":"pos"):""}">${pctS(x.apr)} <span class="muted" style="font-size:12px">${x.apr>0?"→ shorts":"→ longs"}</span></span></div>`).join("")}</div>
+  <p class="muted" style="font-size:12.5px">${M.at?`Read ${hhmm(M.at)} UTC. `:""}Positive APR: longs pay shorts. The radar also checks books, OI-cap headroom and crossed books from Tokyo RPC.</p>
+  <div class="links"><a class="pri" href="radar.html">Open the live radar →</a><a href="${RADAR_LIVE}" target="_blank" rel="noopener">Hosted radar</a><a href="radar.html#lb">Carry Leaderboard</a></div>
+  <p class="muted" style="font-size:13px;margin-bottom:0"><b>Repeat-use loop:</b> check the board, X-Ray your own wallet (<code>?wallet=0x…</code> deep link), see your funding rank, share it.</p>`;
+}
+function stepDecision(){
+  const d=D.data;
+  if(!d)return `<p class="empty">data.json not available.</p>`;
+  const T=d.target||[],pos=d.positions||[],p=d.params||{};
+  const net=T.reduce((s,l)=>s+(l.side==="long"?l.notional:-l.notional),0);
+  const carry=pos.reduce((s,q)=>{const f=(d.funding||[]).find(x=>x.symbol===q.symbol);if(!f)return s;return s+(f.paidSide===q.side?1:-1)*Math.abs(f.apr)*q.contracts*(q.mark||q.entry||0)/365},0);
+  const upnl=pos.reduce((s,q)=>s+(q.uPnl||0),0);
+  return `<div class="kicker">Step 2 · the carry decision · last tick ${hhmm(d.updatedAt)} UTC (${ago(d.updatedAt)}) · ${d.live?"LIVE":"dry run"}</div>
+  <h2>Hold the side funding pays, keep the book flat</h2>
+  <p class="why">Each tick ranks all ${(d.funding||[]).length} markets by |APR|, keeps those ≥ ${(p.MIN_APR??.15)*100}%, and adds legs only while |long − short| ≤ ${p.NET_CAP??150} USDso. No direction bet, no server: one GitHub Actions tick every 10 minutes.</p>
+  <div class="pair">${T.map(l=>`<div class="leg"><span class="kicker" style="color:var(--mute)">${l.side} ${esc(sym(l.symbol))}-PERP · ${l.notional} USDso</span><br><b class="pos">${pctS(l.apr)}</b> <span class="muted">APR, paid to ${l.apr>0?"shorts":"longs"}</span></div>`).join("")||'<p class="empty">No market above the entry threshold this tick.</p>'}</div>
+  <div class="kpis">
+    <div class="kpi"><span>Net exposure</span><b>${net} USDso</b><small>cap ${p.NET_CAP??150}</small></div>
+    <div class="kpi"><span>Est. funding / day</span><b class="${carry>=0?"pos":"neg"}">${carry>=0?"+":""}${fmt(carry)}</b><small>USDso, open legs</small></div>
+    <div class="kpi"><span>Unrealised PnL</span><b class="${upnl>=0?"pos":"neg"}">${upnl>=0?"+":""}${fmt(upnl)}</b><small>${pos.length} open legs</small></div>
+    <div class="kpi"><span>Equity</span><b>${fmt(d.margin?.equity)}</b><small>USDso (paper)</small></div>
+  </div>
+  <p class="muted" style="font-size:13px">Hard gates, no AI: entry ≥ ${(p.MIN_APR??.15)*100}% APR, exit under ${(p.EXIT_APR??.05)*100}%, per-leg stop-loss −${p.STOP_LOSS_PCT??4}%, max ${p.MAX_LEGS??4} legs, 12 h cooldown after a stop. The bot uses a dreamDEX <i>trading key</i> that can place orders but can never withdraw.</p>
+  <div class="links"><a class="pri" href="timeline.html">See every tick and every refusal →</a><a href="index.html">Bot dashboard</a><a href="${REPO}/blob/main/kit/strategies/arena-autopilot/src/tick.ts" target="_blank" rel="noopener">tick.ts</a></div>`;
+}
+function stepAgent(){
+  const ro=D.data?.riskOfficer;
+  const v=x=>`<div class="verdict ${x.verdict==="APPROVE"?"ok":"no"}"><span class="badge ${x.verdict==="APPROVE"?"pos":"neg"}">${x.verdict}</span> <span class="muted" style="font-size:12.5px">call #${x.n} · request ${x.requestId}</span>
+    <p style="margin:8px 0 0;font-size:13.5px"><b>Book:</b> ${esc(x.book)}</p><blockquote>${esc(x.answer)}</blockquote>
+    ${txLine(x.requestTx,"shannon","createRequest")}${txLine(x.resultTx,"shannon","consensus")}
+    <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center"><button class="sm" data-decode="${x.resultTx}" data-expect="${esc(x.answer)}">Decode answer on-chain</button><a href="${RECEIPTS(x.requestId)}" target="_blank" rel="noopener" style="font-size:12.5px">validator receipts</a><div class="vout dout"></div></div></div>`;
+  return `<div class="kicker">Step 3 · Somnia Agents risk officer · Shannon testnet (chain 50312)</div>
+  <h2>An on-chain AI must sign off before new legs open</h2>
+  <p class="why">The bot sends the book as pre-computed facts to Somnia's LLM Inference agent (Qwen3-30B). Three validators run it; the answer counts only when 2 of 3 agree. In <code>gate</code> mode anything but APPROVE blocks entries. Exits run first, so the gate can only reduce risk.</p>
+  ${ro?`<div class="verdict ${ro.verdict==="APPROVE"?"ok":"no"}" style="margin-bottom:10px"><span class="badge">${esc(ro.verdict)}</span> <span class="muted">latest live tick · ${esc(ro.mode)} mode</span><blockquote>${esc(ro.response||ro.error||"")}</blockquote>${ro.requestTx?txLine(ro.requestTx,"shannon","request"):""}${ro.resultTx?txLine(ro.resultTx,"shannon","consensus"):""}</div>`:""}
+  <div class="pair">${VERDICTS.map(v).join("")}</div>
+  <p class="muted" style="font-size:13px;margin:0">Call #1 used a free-text prompt and refused a hedged book for a wrong reason. That refusal stays public in the <a href="timeline.html">timeline</a>; it is why the prompt now passes numbers, not prose. Three calls cost 0.643 STT in total.</p>`;
+}
+function stepTrades(){
+  const byHash=new Map(README_TRADES.map(t=>[t.hash,t]));
+  for(const x of D.trades||[])if(x.hash)byHash.set(x.hash,{t:x.t,side:x.side,symbol:sym(x.symbol),qty:x.filled??x.quantity,price:x.entry??x.price,why:x.why,hash:x.hash});
+  const L=[...byHash.values()].sort((a,b)=>Date.parse(a.t)-Date.parse(b.t));
+  return `<div class="kicker">Step 4 · live orders on Somnia Tokyo testnet (chain 50383)</div>
+  <h2>${L.length} filled orders, each with a tx hash you can check here</h2>
+  <p class="why">Tokyo has no public explorer, so <b>Verify</b> calls <code>eth_getTransactionReceipt</code> on its RPC from your browser and checks the sender is the bot's Perps-only trading key.</p>
+  <div style="margin:0 0 10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button class="pri" id="vall">Verify all ${L.length} on-chain</button><span class="muted" id="vsum" style="font-size:13px"></span></div>
+  ${L.map(t=>`<div class="trade"><div class="h"><b>${t.side} ${esc(t.symbol)}-PERP ${t.qty}${/^close/.test(t.why||"")?` <span class="muted" style="font-weight:400">(closes the ${t.side==="short"?"long":"short"})</span>`:""}</b><span class="mono">@ ${fmt(t.price,4)}</span><span class="t">${utc(t.t)}</span></div><div class="muted" style="font-size:13px">${esc(t.why)}</div>${txLine(t.hash,"tokyo")}</div>`).join("")}
+  <div class="flag">The 18:49 tick stopped out LIT and re-opened it in the same tick. That exposed churn risk, so the bot now skips same-tick re-entry and waits a 12 h cooldown after any stop-loss.</div>`;
+}
+function stepFeedback(){
+  const F=D.fb;
+  const lb=`<div class="links"><a class="pri" href="radar.html#lb">Carry Leaderboard →</a><a href="${RADAR_LIVE}#lb" target="_blank" rel="noopener">Hosted leaderboard</a><a href="https://x.com/day1onearth/status/2112624874833191217" target="_blank" rel="noopener">Leaderboard launch on X</a></div>`;
+  if(!F)return `<div class="kicker">Step 5</div><h2>Loading the feedback index…</h2>`;
+  if(!F.ok)return `<div class="kicker">Step 5 · feedback track</div><h2>Feedback track and Carry Leaderboard</h2><p class="why">Could not load the index from this host. Open it on GitHub.</p><div class="links"><a href="${REPO}/blob/main/feedback/INDEX.md">feedback/INDEX.md</a></div>${lb}`;
+  const pub=F.items,maj=pub.filter(i=>i.sev==="major"),standing=pub.length+F.committed.length,filed=standing+(F.withdrawn?1:0);
+  const areas={};pub.forEach(i=>areas[i.area]=(areas[i.area]||0)+1);
+  return `<div class="kicker">Step 5 · feedback track + Carry Leaderboard</div>
+  <h2>${filed} feedback items filed, each with a read-only repro</h2>
+  <p class="why">Found while building the bot and the radar. Every item ships a repro script a judge can run without a key. ${F.withdrawn?`${F.withdrawn} was withdrawn as a duplicate, so ${standing} stand. `:""}${F.committed.length?`${F.committed.length} are committed by SHA-256 hash and revealed on submission.`:""}</p>
+  <div class="kpis">
+    <div class="kpi"><span>Published</span><b>${pub.length}</b><small>${maj.length} major · ${pub.length-maj.length} normal</small></div>
+    <div class="kpi"><span>Committed</span><b>${F.committed.length}</b><small>sha256 in COMMITMENTS.md</small></div>
+    <div class="kpi"><span>Areas</span><b>${Object.keys(areas).length}</b><small>${Object.entries(areas).map(([a,n])=>`${esc(a)} ${n}`).join(" · ")}</small></div>
+  </div>
+  <div class="kicker" style="color:var(--mute)">Major items</div>
+  <div class="fb">${maj.map(i=>`<a href="${REPO}/blob/main/feedback/${encodeURI(i.file)}" target="_blank" rel="noopener"><span class="n">${i.n}</span>${md(i.title.length>120?i.title.slice(0,118)+"…":i.title)}<span class="sev">major</span></a>`).join("")}</div>
+  <details><summary style="cursor:pointer;font-size:13.5px">All ${pub.length} published items${F.committed.length?` + ${F.committed.length} commitments`:""}</summary><div class="fb">${pub.filter(i=>i.sev!=="major").map(i=>`<a href="${REPO}/blob/main/feedback/${encodeURI(i.file)}" target="_blank" rel="noopener"><span class="n">${i.n}</span>${md(i.title.length>120?i.title.slice(0,118)+"…":i.title)}</a>`).join("")}${F.committed.map(([n,h])=>`<a href="${REPO}/blob/main/feedback/COMMITMENTS.md" target="_blank" rel="noopener"><span class="n">${n}</span>committed · sha256 <span class="mono">${h.slice(0,12)}…</span></a>`).join("")}</div></details>
+  <div class="links"><a class="pri" href="${REPO}/blob/main/feedback/INDEX.md" target="_blank" rel="noopener">feedback/INDEX.md →</a><a href="${REPO}" target="_blank" rel="noopener">Repo</a><a href="${REPO}/blob/main/docs/radar-demo.mp4" target="_blank" rel="noopener">Demo video (40 s)</a></div>
+  <p style="margin:16px 0 4px;font-weight:600">Carry Leaderboard</p>
+  <p class="muted" style="font-size:13.5px;margin:0">Ranks ~1,260 Arena wallets by the funding they earn or pay per day, with a "your rank" lookup and a share button. It refreshes every 60 s, which gives traders a reason to come back.</p>
+  ${lb}`;
+}
+
+// ---------- tour ----------
+let cur=0,timer=null,t0=0,raf=null;
+function show(i,focus=true){
+  cur=Math.max(0,Math.min(STEPS.length-1,i));
+  $("stage").innerHTML=STEPS[cur].render();
+  $("steps").querySelectorAll("button").forEach((b,j)=>{b.setAttribute("aria-current",j===cur?"step":"false");b.querySelector("i").style.width=j<cur||(j===cur&&!timer)?"100%":"0"});
+  $("crit").innerHTML=CRIT.map((c,j)=>`<span class="${STEPS[cur].crit.includes(j)?"on":""}">${c}</span>`).join("");
+  $("posn").textContent=`${cur+1} / ${STEPS.length}`;
+  $("back").disabled=cur===0;
+  $("next").textContent=cur===STEPS.length-1?"Restart ↺":"Next →";
+  if(location.hash!==`#${cur+1}`)history.replaceState(null,"",`#${cur+1}`);
+  if(focus)$("stage").scrollIntoView({block:"nearest"});
+}
+function buildSteps(){$("steps").innerHTML=STEPS.map((s,j)=>`<button role="tab" data-step="${j}" aria-label="Step ${j+1}: ${s.k}"><span class="bar"><i></i></span><span class="lbl">${j+1} · ${s.k}</span></button>`).join("")}
+function stopPlay(){clearInterval(timer);timer=null;cancelAnimationFrame(raf);$("play").textContent="▶ Auto-play 60 s";show(cur,false)}
+function startPlay(){
+  if(timer){stopPlay();return}
+  if(cur===STEPS.length-1)show(0,false);
+  $("play").textContent="❚❚ Pause";t0=performance.now();
+  const anim=()=>{const bar=$("steps").querySelectorAll("i")[cur];if(bar)bar.style.width=Math.min(100,(performance.now()-t0)/STEP_MS*100)+"%";raf=requestAnimationFrame(anim)};
+  show(cur,false);anim();
+  timer=setInterval(()=>{if(cur>=STEPS.length-1){stopPlay();return}t0=performance.now();show(cur+1,false)},STEP_MS);
+}
+$("next").onclick=()=>{if(timer)stopPlay();show(cur===STEPS.length-1?0:cur+1)};
+$("back").onclick=()=>{if(timer)stopPlay();show(cur-1)};
+$("play").onclick=startPlay;
+document.addEventListener("keydown",e=>{if(e.target.closest("input,textarea"))return;if(e.key==="ArrowRight"){if(timer)stopPlay();show(cur+1)}if(e.key==="ArrowLeft"){if(timer)stopPlay();show(cur-1)}});
+document.addEventListener("click",async e=>{
+  const s=e.target.closest("[data-step]");if(s){if(timer)stopPlay();show(+s.dataset.step);return}
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.copy){try{await navigator.clipboard.writeText(b.dataset.copy);b.textContent="Copied"}catch(err){b.textContent="Select + copy"}setTimeout(()=>b.textContent="Copy",1400);return}
+  if(b.hasAttribute("data-verify")){runVerify(b.closest(".tx"));return}
+  if(b.id==="vall"){b.disabled=true;b.textContent="Verifying…";const boxes=[...document.querySelectorAll(".tx")];const res=await Promise.all(boxes.map(runVerify));const ok=res.filter(v=>v&&v.ok).length,mine=res.filter(v=>v&&v.from.toLowerCase()===BOT_KEY).length;b.disabled=false;b.textContent="Verify again";$("vsum").innerHTML=`<span class="${ok===boxes.length?"pos":"warn"}">${ok}/${boxes.length} succeeded on chain ${TOKYO.id}</span> · ${mine}/${boxes.length} sent by the bot key ${shortA(BOT_KEY)}`;return}
+  if(b.dataset.decode){
+    const out=b.parentElement.querySelector(".dout");out.innerHTML='<span class="muted">Reading submitResponse calldata from Shannon RPC…</span>';
+    try{const [tx]=await rpc(SHANNON.rpc,[["eth_getTransactionByHash",[b.dataset.decode]]]);const text=decodeConsensus(tx.input);const same=text===b.dataset.expect;out.innerHTML=`<span class="${same?"ok":"bad"}">${same?"✓ matches":"✗ differs from"} the answer shown</span>, decoded from the consensus tx:<blockquote>${esc(text)}</blockquote>`}
+    catch(err){out.innerHTML='<span class="warn">Shannon RPC unreachable. Open the consensus tx in the explorer.</span>'}
+  }
+});
+async function head(){
+  try{const [n]=await rpc(TOKYO.rpc,[["eth_blockNumber",[]]]);const first=!D.head;D.head=parseInt(n,16);if(first&&cur===0&&D.markets)show(0,false);$("rpc").textContent=`Tokyo RPC live · chain ${TOKYO.id} · head #${D.head.toLocaleString("en-US")}`;$("rpcdot").className="dot"}
+  catch(e){$("rpc").textContent="Tokyo RPC unreachable, retrying";$("rpcdot").className="dot off"}
+}
+buildSteps();
+{const h=parseInt(location.hash.slice(1),10);if(h>=1&&h<=STEPS.length)cur=h-1}
+show(cur,false);loadAll();head();setInterval(head,15000);
+</script>
+</body>
+</html>
