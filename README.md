@@ -1,5 +1,11 @@
 # Arena Autopilot
 
+> **Judges, start here:**
+> - **[Judge mode: 60-second tour](docs/judge.html)** (`docs/judge.html`): live market → carry decision → Somnia Agent verdict → live Tokyo trades → feedback + Carry Leaderboard, in 5 steps.
+> - **[Verifiable Decision Timeline](docs/timeline.html)** (`docs/timeline.html`): every bot tick from `journal/` with its inputs, risk-officer verdict, deterministic gates, the action taken or refused, and tx hashes you can verify against Somnia RPC in the browser (plus CSV export).
+>
+> Both are static pages with no wallet. GitHub shows their source, so to view them serve the repo root (`python3 -m http.server`) and open `/docs/judge.html`, or open them wherever `docs/` is published.
+
 **A market-neutral funding-carry bot for dreamDEX perps on Somnia testnet.**
 
 Most perp bots pick one market and one direction. Arena Autopilot looks at **all 21 dreamDEX perp markets** every tick:
@@ -15,7 +21,7 @@ Every decision and every transaction hash goes into a public journal, and a stat
 - **Radar features:** live top carry pair (market-neutral), Wallet X-Ray for any address (`?wallet=0x...` deep link), **Carry Leaderboard** (top funding harvesters vs bleeders across ~1,260 Arena wallets, "your rank" lookup, refreshes every 60 s), one-click Share on X
 - **Bot dashboard:** `docs/index.html` (reads `docs/data.json` written by each tick)
 - **Strategy:** `kit/strategies/arena-autopilot/src/tick.ts`
-- **Feedback track:** 20 reproduced items (6 major, 14 normal), each with a read-only repro script. Start at [`feedback/INDEX.md`](feedback/INDEX.md)
+- **Feedback track:** 24 reproduced items (5 major, 19 normal), each with a read-only repro script (20 published, 4 committed by SHA-256 in `feedback/COMMITMENTS.md` until submission). Start at [`feedback/INDEX.md`](feedback/INDEX.md)
 
 ## Who it is for
 
