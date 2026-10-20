@@ -1,7 +1,11 @@
-# NEAR-PERP and XRP-PERP books stay crossed on-chain: a crossing limit order rests and does not match
+# At the market-wide OI cap, crossing limit orders rest instead of matching (crossed book on NEAR/XRP/BTC), and getMaxPerpOrderSize still says placeable
 
 Severity: major
 Area: contracts
+
+**Two facts that pin the cause**
+- **A smaller sell that fit inside the OI headroom filled against the same resting XRP bid** (tx `0x2484fa9c…`). The larger crossing sell rested under it.
+- **When `maxOpenInterest` was raised on XRP, NEAR and BTC (seen at 08:23 UTC), all three books uncrossed at once.**
 
 ## Steps to reproduce
 0. In a folder with `@somnia-chain/markets-sdk@0.32.1`, `viem` and `tsx` installed:
