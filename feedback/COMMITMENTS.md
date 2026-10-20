@@ -18,3 +18,20 @@ e8a1286ffc04841b029c1b384106609d04602ea85f30c930d2eb6f3317324e63  item 024 repor
 943ec6affe62fff7d9fc8cb1f552e71557d02035382f9d1ba3532dc5accc8c1a  item 025 report (.md)
 97268a6a292a4135389d7f1715727050fafb5b6f20845ebe9e14162d630dde87  item 025 repro script
 ```
+
+## Status and how to verify (added after the reveal)
+
+Each hash above commits to the **original text** of the item, not to whatever the file says today. Several reports were edited after they were committed: an `## Evidence` section was added to 019-021 at reveal, every item's `## Environment` section was rewritten to the bounty template (SDK, network, wallet), and 020 was merged into 019. 020 and 021 were then withdrawn (`../withdrawn/`). None of the repro scripts changed. Run these from the repository root; each command should print the hash on the matching line above.
+
+| Item | Original text is in | Command |
+|---|---|---|
+| 019 report | `feedback/commitments/019-docs-adl-order-is-leverage-not-profit.md` (byte-exact original; the live `feedback/019-*.md` now also has the added Evidence section, the new Environment block and the merged 020 section, so it no longer hashes to the commitment) | `sha256sum feedback/commitments/019-docs-adl-order-is-leverage-not-profit.md` |
+| 019 repro | `feedback/019-repro.mts` (unchanged) | `sha256sum feedback/019-repro.mts` |
+| 020 report | `withdrawn/020-btc-long-adl-side-never-ranked.md` (unchanged since reveal; the original is that file minus the Evidence section added at reveal) | `python3 -c "import re,hashlib;s=open('withdrawn/020-btc-long-adl-side-never-ranked.md').read();print(hashlib.sha256(re.sub(r'## Evidence\\n.*?\\n\\n(?=## Environment)','',s,flags=re.S).encode()).hexdigest())"` |
+| 020 repro | `withdrawn/020-repro.mts`, and byte-identical `feedback/019-repro-b.mts` | `sha256sum withdrawn/020-repro.mts feedback/019-repro-b.mts` |
+| 021 report | `withdrawn/021-position-analytics-truncates-pnl-bank-floors.md` (same rule as 020) | `python3 -c "import re,hashlib;s=open('withdrawn/021-position-analytics-truncates-pnl-bank-floors.md').read();print(hashlib.sha256(re.sub(r'## Evidence\\n.*?\\n\\n(?=## Environment)','',s,flags=re.S).encode()).hexdigest())"` |
+| 021 repro | `withdrawn/021-repro.mts` (unchanged) | `sha256sum withdrawn/021-repro.mts` |
+| 022-025 reports | `feedback/commitments/022-*.md` ... `025-*.md` (byte-exact originals; the live files differ only in the rewritten Environment section, plus one wording change in 023: "the 3 Hideki spot markets" became "the 3 spot markets on the Somnia Tokyo testnet (Hideki)") | `sha256sum feedback/commitments/02[2-5]-*.md` |
+| 022-025 repros | `feedback/02[2-5]-repro.mts` (unchanged) | `sha256sum feedback/02[2-5]-repro.mts` |
+
+To see exactly what changed in a report since it was committed: `diff feedback/commitments/<file> feedback/<file>`.
