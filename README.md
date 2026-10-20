@@ -105,6 +105,7 @@ The bot key `0x775275…Bb47` is linked to the trading wallet with Perps-only ac
 3. Arena Autopilot funding legs: https://x.com/day1onearth/status/2112521486552465788
 4. Wallet X-Ray + carry banner: https://x.com/day1onearth/status/2112552314288693731
 5. Somnia Agents risk officer: https://x.com/day1onearth/status/2112552086151778495
+6. Carry Leaderboard launch: https://x.com/day1onearth/status/2112624874833191217
 
 ## Credits
 
