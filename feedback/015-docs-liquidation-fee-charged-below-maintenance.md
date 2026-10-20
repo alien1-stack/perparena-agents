@@ -79,5 +79,10 @@ Across the latest 1,000 `AccountLiquidated` rows, the status transitions joined 
 ## Suggested fix
 Describe the implemented rule on the trader page, for example: "The fee is up to 1% of the notional closed, and never more than the margin the close frees up. A close can therefore charge a fee and still leave you below maintenance margin, in which case the next liquidation round follows." If the documented rule is the intended one, make the engine skip the fee whenever `marginStatusAfter` is still below maintenance with a position open. It already has a skip path (`LiquidationFeeSkipped`).
 
+## Evidence
+- Repro script: `015-repro.mts` in this folder (read-only: `eth_call`, `eth_getLogs` and indexer queries; it signs nothing). Run with `npx tsx 015-repro.mts` from a project with `@somnia-chain/markets-sdk@0.32.1` installed. The output under **Actual** comes from two separate runs.
+- Transactions: `0x3d6e0f856bb6c27d646f6fc7bbf55cfb1595cf4b08475b5de379c31b6148c676`, `0x088abef6f44fd6dbc0d62dd67062d549bfc02dab47e585cb4a802aa5498d0da7`, `0xecd64b50aa7a71f3e71c0e08c0d0658b8ef787ebf258219c51e22dd19334f9d5`, `0x152f07c09a9cb3b554f4655a49cd5fe2bfce2442c504372588bb311caae72efb`, `0xad1a335a98f8549552ab31add729e3c52e3be545b6d15935919de58ced8c8b79`, `0xe1a26f53a93b88eb150cf7e6514c85c02a6eff0976946ed5938ccdaf752c4f90`
+- Blocks: 28563558, 28563530, 28563241, 28563527, 28563523, 22615636,
+
 ## Environment
 @somnia-chain/markets-sdk 0.32.1, Node 22, Somnia Tokyo testnet (chain 50383), LiquidationEngine 0xA66d3C24Ad4a389d863846905D8173e1017e9F4D, MarginBank 0x478769E1177C0773c43A593DCCc4Ad15F15F1394, RPC https://api.hideki2.infra.testnet.somnia.network, indexer https://hideki-dev.smk.somnia.host/v1/graphql, docs checked 2026-10-20, read-only.
