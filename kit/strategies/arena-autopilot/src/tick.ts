@@ -24,6 +24,7 @@ import {
   alignQuantity,
   createExchange,
   envNum,
+  fromRaw,
   liveFunding,
   liveMark,
   loadEnv,
@@ -88,7 +89,8 @@ async function bookFacts(
   const first = book[0] && bySymbol.get(book[0].symbol);
   if (account && first) {
     try {
-      equity = Number((await marginSnapshot(ctx.exchange, first.m, account)).equity) / 1e18;
+      // Margin is in the quote (collateral) token's own decimals, not price decimals.
+      equity = fromRaw((await marginSnapshot(ctx.exchange, first.m, account)).equity, first.m.info.quoteDecimals);
     } catch {
       /* equity stays unknown */
     }
@@ -233,7 +235,8 @@ async function main() {
   let margin: Record<string, unknown> | undefined;
   if (account && markets[0]) {
     const s = await marginSnapshot(ctx.exchange, markets[0], account);
-    margin = { equity: Number(s.equity) / 1e18, unlocked: Number(s.unlocked) / 1e18, locked: Number(s.locked) / 1e18 };
+    const qd = markets[0].info.quoteDecimals; // collateral decimals; prices stay 1e18
+    margin = { equity: fromRaw(s.equity, qd), unlocked: fromRaw(s.unlocked, qd), locked: fromRaw(s.locked, qd) };
   }
   const snapshot = {
     updatedAt: now(),
