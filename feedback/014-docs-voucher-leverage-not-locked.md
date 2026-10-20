@@ -7,7 +7,7 @@ The trader page "Margin & Liquidations" (`/docs/trading/perps-testnet/margin-and
 
 > - **Your leverage setting can't be changed** while it remains.
 
-On the perps testnet (Hideki, chain 50383) this is not what the MarginBank does. `MarginBank.setMaxLeverage(perpPool, leverageX)` succeeds for accounts that hold an active voucher (`getCreditFloor(account) > 0`). In the last 20,000 blocks, every one of the 10 `MaxLeverageSet` events came from such an account. They both tightened the setting (SOL/BTC 20x → 10x) and loosened it (ZEC 1x → 5x). An `eth_call` simulation from the same accounts accepts any value from 1x to 20x. The only rejections are `InvalidLeverage` above 20x and `NoStateChange` for the current value, which are the same rules as on a non-voucher account. The `VoucherAccountLeverageLocked` error is in the SDK's `contractErrorsAbi`, but it is never raised.
+On the Somnia Tokyo testnet (Hideki, chain 50383) this is not what the MarginBank does. `MarginBank.setMaxLeverage(perpPool, leverageX)` succeeds for accounts that hold an active voucher (`getCreditFloor(account) > 0`). In the last 20,000 blocks, every one of the 10 `MaxLeverageSet` events came from such an account. They both tightened the setting (SOL/BTC 20x → 10x) and loosened it (ZEC 1x → 5x). An `eth_call` simulation from the same accounts accepts any value from 1x to 20x. The only rejections are `InvalidLeverage` above 20x and `NoStateChange` for the current value, which are the same rules as on a non-voucher account. The `VoucherAccountLeverageLocked` error is in the SDK's `contractErrorsAbi`, but it is never raised.
 
 The SDK describes the real rule. `PerpLeverage.voucherLeverageCapX` TSDoc (`src/perp/margin.ts:672-708`) says the voucher cap "REPLACES an unset or looser account setting" and "a STRICTER user setting still wins". PERPS.md's `getPerpLeverage` section agrees. But PERPS.md contradicts itself: its credit-voucher rules (lines 838-840 in SDK 0.32.1) repeat the trader docs' claim that "the account cannot change its own leverage setting". So the stale sentence appears in two places: the trader docs and PERPS.md's voucher section. So the voucher caps *effective* leverage at `getVoucherLeverageCap()` (20 today). It does not freeze the account's own setting.
 
@@ -54,4 +54,7 @@ Replace the rule with what the contract does, for example: "While the credit rem
 - Blocks: 28557491, 28557659, 28556700, 28553953, 28554615, 28552336
 
 ## Environment
-@somnia-chain/markets-sdk 0.32.1, Node 22, Somnia Tokyo testnet (chain 50383), MarginBank 0x478769E1177C0773c43A593DCCc4Ad15F15F1394, VoucherDistributor 0x2ACD9EFdA721450906bfE1bef3edE269636E42C4, RPC https://api.hideki2.infra.testnet.somnia.network, docs checked 2026-10-20 (llms-full.txt), read-only.
+- SDK: @somnia-chain/markets-sdk 0.32.1
+- Network: Somnia Tokyo testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network)
+- Wallet: n/a (read-only repro, no account needed)
+- Other: Node 22, MarginBank 0x478769E1177C0773c43A593DCCc4Ad15F15F1394, VoucherDistributor 0x2ACD9EFdA721450906bfE1bef3edE269636E42C4, docs checked 2026-10-20 (llms-full.txt), read-only.
