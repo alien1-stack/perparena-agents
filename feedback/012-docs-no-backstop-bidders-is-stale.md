@@ -7,7 +7,7 @@ The trader page "Margin & Liquidations" (`/docs/trading/perps-testnet/margin-and
 
 > No backstop bidders are registered on testnet, so the later stages come in sooner.
 
-On the perps testnet (Hideki, chain 50383) this is false. `LiquidationEngine.getBidderCount()` has returned 1 since block 24,364,494 (2026-10-15 18:14 UTC). The bidder `0xAF327764345c2f54C1F2bc3322D28E4f633793b9` has taken over three liquidated positions today (`PositionTakenOver` + `PositionTransferred` + `CloseOutMarginSettled` in one tx). The SDK's own `getLiquidationEngineConfig()` also reports `bidderCount: 1n`.
+On the Somnia Tokyo testnet (Hideki, chain 50383) this is false. `LiquidationEngine.getBidderCount()` has returned 1 since block 24,364,494 (2026-10-15 18:14 UTC). The bidder `0xAF327764345c2f54C1F2bc3322D28E4f633793b9` has taken over three liquidated positions today (`PositionTakenOver` + `PositionTransferred` + `CloseOutMarginSettled` in one tx). The SDK's own `getLiquidationEngineConfig()` also reports `bidderCount: 1n`.
 
 This matters for anyone who reasons about liquidation outcomes from the docs. A trader or keeper who reads the sentence expects a bankrupt position to skip straight to the Insurance Fund/ADL. In fact, a position under close-out margin can be transferred to a third-party bidder at the takeover price (`TakeoverBandClamped` bounds), and the account's remaining close-out margin goes with it.
 
@@ -54,4 +54,7 @@ Replace the sentence with the current state ("one backstop bidder is registered 
 Outputs above. `012-repro.mts` is in this folder.
 
 ## Environment
-@somnia-chain/markets-sdk 0.32.1, Node 22, Somnia Tokyo testnet (chain 50383), LiquidationEngine 0xA66d3C24Ad4a389d863846905D8173e1017e9F4D, RPC https://api.hideki2.infra.testnet.somnia.network, indexer https://hideki-dev.smk.somnia.host/v1/graphql, docs checked 2026-10-20, read-only.
+- SDK: @somnia-chain/markets-sdk 0.32.1
+- Network: Somnia Tokyo testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network)
+- Wallet: n/a (read-only repro, no account needed)
+- Other: Node 22, LiquidationEngine 0xA66d3C24Ad4a389d863846905D8173e1017e9F4D, indexer https://hideki-dev.smk.somnia.host/v1/graphql, docs checked 2026-10-20, read-only.
