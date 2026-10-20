@@ -1,6 +1,6 @@
 # Feedback index
 
-Every item has a repro script next to it (`0NN-repro.*`) that a judge can run read-only. The *first public commit* column is the git timestamp when the item first appeared in this public repo, for first-reporter checks.
+Every item has a repro script next to it (`0NN-repro.*`; 019 also has `019-repro-b.mts`) that a judge can run read-only. The *first public commit* column is the git timestamp when the item first appeared in this public repo, for first-reporter checks.
 
 | # | Item | Severity | Area | First public commit (UTC) |
 |---|---|---|---|---|
@@ -21,10 +21,17 @@ Every item has a repro script next to it (`0NN-repro.*`) that a judge can run re
 | [016](016-sdk-liquidation-abi-missing-takeover-band-and-fee-skipped.md) | `liquidationEngineEventsAbi` cannot decode two liquidation outcomes the engine emits alongside many liquidations (`TakeoverBandClamped`, liquidation-fee skipped), and the SDK's kind vocabularies omit them | normal | SDK | 2026-10-20 15:14:38Z |
 | [017](017-docs-liquidation-engine-start-block-wrong-chain.md) | PERPS.md says the LiquidationEngine is "deployed and indexed from block 436,735,800", a block 15x past the perps testnet head | normal | docs | 2026-10-20 15:14:41Z |
 | [018](018-withdrawable-ignores-initial-margin.md) | `getWithdrawableCollateral` / `getMarginAccount().withdrawable` ignores initial margin, so withdrawing the reported amount reverts `InsufficientMarginAfterWithdrawal` on accounts with open positions | major | contracts | 2026-10-20 15:51:58Z |
-| [019](019-docs-adl-order-is-leverage-not-profit.md) | Docs say ADL closes "the most profit relative to equity first", but the armed ADL ranker orders by leverage and ignores profit | normal | docs | 2026-10-20 ~16:45Z (SHA-256 commitment, see COMMITMENTS.md); full text 2026-10-20 ~18:45Z |
-| [020](020-btc-long-adl-side-never-ranked.md) | BTC longs have 5,157 ADL holders against a 500-holder scan cap, so ADL would skip the ranker on that side, and the docs' ADL queue and ADL bars do not apply to it | normal | docs | 2026-10-20 ~16:45Z (SHA-256 commitment, see COMMITMENTS.md); full text 2026-10-20 ~18:45Z |
-| [021](021-position-analytics-truncates-pnl-bank-floors.md) | Position analytics truncate unrealized PnL toward zero, but the MarginBank floors it, so the documented "re-sums to the bank's equity to the wei" fails on 45% of accounts | normal | SDK | 2026-10-20 ~16:45Z (SHA-256 commitment, see COMMITMENTS.md); full text 2026-10-20 ~18:45Z |
+| [019](019-docs-adl-order-is-leverage-not-profit.md) | Docs say ADL closes "the most profit relative to equity first", but the armed ADL ranker orders by leverage and ignores profit; and the BTC long side (over 5,000 holders against a 500-holder scan cap) is not ranked at all (merged from former 020) | normal | docs | 2026-10-20 16:24:29Z (SHA-256 commitment, see COMMITMENTS.md); full text 2026-10-20 18:29:37Z |
+| 022 | committed, revealed at submission | normal | | 2026-10-20 18:47:16Z (SHA-256 commitment, see COMMITMENTS.md) |
+| 023 | committed, revealed at submission | normal | | 2026-10-20 18:47:16Z (SHA-256 commitment, see COMMITMENTS.md) |
+| 024 | committed, revealed at submission | normal | | 2026-10-20 19:10:42Z (SHA-256 commitment, see COMMITMENTS.md) |
+| 025 | committed, revealed at submission | normal | | 2026-10-20 19:36:36Z (SHA-256 commitment, see COMMITMENTS.md) |
 
-003 was withdrawn (duplicate of an earlier report by another team).
+Totals: 22 items, 5 major and 17 normal (18 published in full, 4 committed by SHA-256 until submission).
 
-Items 014-021 got an `## Evidence` section added at reveal time to match the bounty template. Their text is otherwise unchanged, so the 019-021 hashes in COMMITMENTS.md match the pre-edit files (kept in git history).
+Withdrawn (files kept in [`../withdrawn/`](../withdrawn/)):
+- 003: duplicate of an earlier report by another team.
+- 020: merged into 019 (its evidence is now the section "Related: BTC long side exceeds the ADL scan cap"; its repro is `019-repro-b.mts`, byte-identical to `020-repro.mts`).
+- 021: withdrawn as too minor (a 1-wei-per-position rounding difference).
+
+Edits after first publication or commitment: items 014-021 got an `## Evidence` section at reveal time to match the bounty template; every item's `## Environment` section was later rewritten to the template (SDK version, network, wallet); 016's evidence now separates transaction hashes from event topic0 hashes; 001 and 005 got repro scripts. For the committed items (019-025) the hashes in COMMITMENTS.md refer to the original text. The pre-edit 019-021 files are **not** in this repo's git history (each was first committed in its edited form). COMMITMENTS.md says how to check each hash: byte-exact originals of 019 and 022-025 are in `commitments/`, and the 020/021 originals are the files in `../withdrawn/` minus their Evidence section.
