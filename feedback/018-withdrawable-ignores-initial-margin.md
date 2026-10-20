@@ -73,5 +73,8 @@ An earlier exploratory scan at head 28,590,956 split the accounts by type. Of 57
 ## Suggested fix
 Make `getWithdrawableCollateral` return what `withdraw()` enforces: `max(0, min(unlocked − creditFloor, equity − imReq))`, and also respect any linked-wallet principal clamp. Until then, compute it in `getMarginAccount` from `getAccountHealth` instead of passing the view through, and fix the `withdrawable` TSDoc and the `repayPerpMainFunding` example.
 
+## Evidence
+- Repro script: `018-repro.mts` in this folder (read-only: `eth_call`, `eth_getLogs` and indexer queries; it signs nothing). Run with `npx tsx 018-repro.mts` from a project with `@somnia-chain/markets-sdk@0.32.1` installed. The output under **Actual** comes from two separate runs.
+
 ## Environment
 @somnia-chain/markets-sdk 0.32.1, Node 22, Somnia Tokyo testnet (chain 50383), RPC https://api.hideki2.infra.testnet.somnia.network, indexer https://hideki-dev.smk.somnia.host/v1/graphql, MarginBank 0x478769E1177C0773c43A593DCCc4Ad15F15F1394, read-only (no wallet, no transactions).
