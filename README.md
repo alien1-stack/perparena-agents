@@ -12,7 +12,7 @@ Every decision and every transaction hash goes into a public journal, and a stat
 
 - **Live market radar (no wallet needed):** https://alien1-stack.github.io/alien1-stack/radar/ (source: `docs/radar.html`)
 - **Demo video (40s):** https://github.com/alien1-stack/perparena-agents/blob/main/docs/radar-demo.mp4
-- **Radar features:** live top carry pair (market-neutral), Wallet X-Ray for any address (`?wallet=0x...` deep link), one-click Share on X
+- **Radar features:** live top carry pair (market-neutral), Wallet X-Ray for any address (`?wallet=0x...` deep link), **Carry Leaderboard** (top funding harvesters vs bleeders across ~1,260 Arena wallets, "your rank" lookup, refreshes every 60 s), one-click Share on X
 - **Bot dashboard:** `docs/index.html` (reads `docs/data.json` written by each tick)
 - **Strategy:** `kit/strategies/arena-autopilot/src/tick.ts`
 - **Feedback track:** 20 reproduced items (6 major, 14 normal), each with a read-only repro script. Start at [`feedback/INDEX.md`](feedback/INDEX.md)
