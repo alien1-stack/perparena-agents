@@ -40,6 +40,22 @@
   .bar.hot i{background:var(--neg)} .bar.warm i{background:var(--warn)}
   .pill{font-family:Geist,system-ui,sans-serif;font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid currentColor}
   footer{color:var(--mute);font-size:13px;margin-top:18px;line-height:1.6}
+  .carry{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--pos);border-radius:14px;padding:14px 16px;margin:0 0 16px;display:flex;flex-wrap:wrap;gap:8px 24px;align-items:baseline}
+  .carry b{font-family:"Geist Mono",monospace;font-size:20px;font-weight:500}
+  .carry .lbl{font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
+  .xray{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 16px}
+  .xray h2{font-size:15px;color:var(--mute);font-weight:500;text-transform:uppercase;letter-spacing:.08em}
+  .xray-head{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;margin-bottom:10px}
+  .xray-row{display:flex;gap:8px;flex-wrap:wrap}
+  .xray input{flex:1 1 280px;min-width:0;font:14px "Geist Mono",monospace;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+  .xray button{font:600 14px Geist,system-ui,sans-serif;padding:10px 16px;border-radius:10px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer}
+  .xray button.ghost{background:transparent;color:var(--acc)}
+  .presets{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+  .presets button{font:12px "Geist Mono",monospace;padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--mute);cursor:pointer}
+  .xkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+  .xkpis div{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .xkpis div>span{display:block;font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
+  .xkpis b{font:500 18px "Geist Mono",monospace}
   a{color:var(--acc)}
 </style>
 </head>
@@ -53,6 +69,20 @@
     <div class="live"><span class="dot"></span><span id="status">connecting…</span></div>
   </header>
   <div class="alerts" id="alerts"></div>
+  <div class="carry" id="carry"></div>
+  <div class="xray">
+    <div class="xray-head">
+      <h2 style="margin:0">Wallet X-Ray</h2>
+      <span class="sub" style="margin:0">Paste any address to see its perp positions, unrealised PnL and daily funding cashflow across all 21 markets.</span>
+    </div>
+    <div class="xray-row">
+      <input id="wallet" placeholder="0x… wallet address" spellcheck="false" autocomplete="off">
+      <button id="go">X-Ray</button>
+      <button id="share" class="ghost">Share on X</button>
+    </div>
+    <div class="presets" id="presets"></div>
+    <div id="xray"></div>
+  </div>
   <section><table><thead><tr id="head"></tr></thead><tbody id="rows"></tbody></table></section>
   <footer>
     <b>How to read it.</b> <i>Funding APR</i>: the 8-hour rate annualised; positive means longs pay shorts. <i>OI cap</i>: open interest as a share of the market-wide cap. Near 100%, new exposure stops filling, and we have <a href="https://github.com/alien1-stack/alien1-stack/tree/main/dreamdex-feedback">seen books stay crossed</a> there. <i>Spread</i>: best ask minus best bid in basis points of the mid; negative means crossed.<br>
@@ -126,7 +156,68 @@ function render(){
     return `<tr><td class="sym">${r.sym}</td><td>${fp(r.mid)}</td><td>${sp}</td><td class="${Math.abs(r.apr)>=0.15?(r.apr>0?"neg":"pos"):""}">${(r.apr*100).toFixed(1)}%</td><td>${r.oiPct.toFixed(1)}%<span class="bar ${cls}"><i style="width:${Math.min(100,r.oiPct)}%"></i></span></td><td>${Math.round(r.notionalOI).toLocaleString()}</td><td>${r.lev.toFixed(0)}x</td></tr>`}).join("");
   document.querySelectorAll("th").forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1}render()});
 }
+// ---- Carry pair: best short-side carry + best long-side carry, both with OI headroom ----
+function renderCarry(){
+  const ok=last.filter(r=>r.oiPct<95&&r.mid);
+  const shortLeg=[...ok].filter(r=>r.apr>0).sort((a,b)=>b.apr-a.apr)[0];
+  const longLeg=[...ok].filter(r=>r.apr<0).sort((a,b)=>a.apr-b.apr)[0];
+  const el=document.getElementById("carry");
+  if(!shortLeg||!longLeg){el.innerHTML='<span class="lbl">Top carry pair</span><span>No two-sided carry right now.</span>';return}
+  const head=(r)=>Math.max(0,(r.maxOI-r.oi)*r.mid);
+  const cap=Math.min(head(shortLeg),head(longLeg));
+  const net=(shortLeg.apr+Math.abs(longLeg.apr))/2;
+  el.innerHTML=`<div><span class="lbl">Top carry pair (market-neutral)</span><br><b>Short ${shortLeg.sym} ${(shortLeg.apr*100).toFixed(1)}% · Long ${longLeg.sym} ${(longLeg.apr*100).toFixed(1)}%</b></div>
+  <div><span class="lbl">Blended carry APR</span><br><b class="pos">${(net*100).toFixed(1)}%</b></div>
+  <div><span class="lbl">Room before OI cap</span><br><b>$${Math.round(cap).toLocaleString()}</b></div>`;
+}
+// ---- Wallet X-Ray ----
+async function gql(q){const r=await fetch(GQL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({query:q})});return (await r.json()).data}
+const bySym=()=>Object.fromEntries(last.map(r=>[r.sym,r]));
+async function xray(addr){
+  const out=document.getElementById("xray");
+  addr=(addr||"").trim().toLowerCase();
+  if(!/^0x[0-9a-f]{40}$/.test(addr)){out.innerHTML='<div class="empty">Enter a valid 0x address.</div>';return}
+  out.innerHTML='<div class="empty">Reading positions…</div>';
+  try{
+    const d=await gql(`{ PerpPosition(where:{account:{_eq:"${addr}"}, size:{_neq:"0"}}, limit:50){ size isLong entryPriceX18 realizedPnl market { baseSymbol baseDecimals markPrice fundingRate fundingWindowSec } } }`);
+    const live=bySym(); let upnl=0,fday=0,gross=0,netExp=0;
+    const rows=(d.PerpPosition||[]).map(p=>{
+      const m=p.market,dec=m.baseDecimals,size=Number(p.size)/10**dec,entry=Number(p.entryPriceX18)/1e18;
+      const mark=(live[m.baseSymbol]&&live[m.baseSymbol].mid)||Number(m.markPrice)/1e18;
+      const sgn=p.isLong?1:-1, notional=size*mark, pnl=sgn*(mark-entry)*size;
+      const ratePer8h=Number(m.fundingRate||0)/1e18*(28800/(Number(m.fundingWindowSec)||28800));
+      const funding=-sgn*ratePer8h*notional*3; // positive rate: longs pay
+      upnl+=pnl; fday+=funding; gross+=notional; netExp+=sgn*notional;
+      return [`<td class="sym">${m.baseSymbol}</td>`,`<td>${p.isLong?"long":"short"}</td>`,`<td>${size.toLocaleString("en-US",{maximumFractionDigits:4})}</td>`,`<td>${entry.toPrecision(6)}</td>`,`<td>${mark.toPrecision(6)}</td>`,`<td class="${pnl>=0?"pos":"neg"}">${pnl.toFixed(2)}</td>`,`<td class="${funding>=0?"pos":"neg"}">${funding.toFixed(2)}</td>`];
+    });
+    const k=[["Open positions",rows.length],["Gross notional",`$${Math.round(gross).toLocaleString()}`],["Net exposure",`$${Math.round(netExp).toLocaleString()}`],["Unrealised PnL",`<span class="${upnl>=0?"pos":"neg"}">${upnl.toFixed(2)}</span>`],["Funding / day (est.)",`<span class="${fday>=0?"pos":"neg"}">${fday.toFixed(2)}</span>`]];
+    window._xr={addr,rows:rows.length,upnl,fday,gross};
+    out.innerHTML=`<div class="xkpis">${k.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("")}</div>`+(rows.length?`<div style="overflow-x:auto">${'<table><thead><tr>'+["Market","Side","Size","Entry","Mark","uPnL","Funding/day"].map(h=>`<th>${h}</th>`).join("")+'</tr></thead><tbody>'+rows.map(r=>`<tr>${r.join("")}</tr>`).join("")+'</tbody></table>'}</div>`:'<div class="empty">No open perp positions for this wallet.</div>');
+    const u=new URL(location.href);u.searchParams.set("wallet",addr);history.replaceState(null,"",u);
+  }catch(e){out.innerHTML='<div class="empty">Indexer unreachable, try again.</div>'}
+}
+async function loadPresets(){
+  try{
+    const d=await gql(`{ PerpPosition(where:{size:{_neq:"0"}}, order_by:{updatedAtBlock:desc}, limit:300){ account size market{ baseDecimals markPrice } } }`);
+    const tot={};(d.PerpPosition||[]).forEach(p=>{const n=Number(p.size)/10**p.market.baseDecimals*Number(p.market.markPrice)/1e18;tot[p.account]=(tot[p.account]||0)+n});
+    const top=Object.entries(tot).sort((a,b)=>b[1]-a[1]).slice(0,4);
+    document.getElementById("presets").innerHTML='<span class="live" style="align-self:center">Active whales:</span>'+top.map(([a,n])=>`<button data-a="${a}">${a.slice(0,6)}…${a.slice(-4)} · $${Math.round(n/1000)}k</button>`).join("");
+    document.querySelectorAll(".presets button").forEach(b=>b.onclick=()=>{document.getElementById("wallet").value=b.dataset.a;xray(b.dataset.a)});
+  }catch(e){}
+}
+document.getElementById("go").onclick=()=>xray(document.getElementById("wallet").value);
+document.getElementById("wallet").addEventListener("keydown",e=>{if(e.key==="Enter")xray(e.target.value)});
+document.getElementById("share").onclick=()=>{
+  const x=window._xr; const u=new URL(location.href);
+  let text;
+  if(x){text=`X-Ray of ${x.addr.slice(0,6)}…${x.addr.slice(-4)} on @DreamDEXSomnia perps: ${x.rows} positions, $${Math.round(x.gross).toLocaleString()} gross, funding ${x.fday>=0?"+":""}${x.fday.toFixed(2)} USDso/day. Check any wallet:`}
+  else{const c=document.getElementById("carry").innerText.replace(/\s+/g," ").trim();text=`Live on @DreamDEXSomnia perps: ${c}. All 21 markets, no wallet needed:`}
+  window.open("https://twitter.com/intent/tweet?text="+encodeURIComponent(text)+"&url="+encodeURIComponent(u.toString()),"_blank","noopener");
+};
+const _origRender=render; render=function(){_origRender();renderCarry()};
 tick();setInterval(tick,15000);setInterval(()=>{markets=[]},600000);
+loadPresets();
+{const w=new URL(location.href).searchParams.get("wallet");if(w){document.getElementById("wallet").value=w;setTimeout(()=>xray(w),2500)}}
 </script>
 </body>
 </html>
