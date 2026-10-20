@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-20T14:40:35.236Z",
+  "updatedAt": "2026-10-20T18:49:47.100Z",
   "live": false,
   "account": "0xEe38f68D3a475d112f82B8a69eE79477bAFEab89",
   "params": {
@@ -11,167 +11,167 @@
     "STOP_LOSS_PCT": 4
   },
   "margin": {
-    "equity": 999.9698053719745,
-    "unlocked": 1000,
+    "equity": 996.1511905919507,
+    "unlocked": 995.2409575070694,
     "locked": 0
   },
   "positions": [
     {
       "symbol": "LIT/USDso:USDso",
       "side": "long",
-      "contracts": 29.8,
-      "entry": 3.3474,
-      "mark": 3.340725981753,
-      "uPnl": -0.1988857437605928
+      "contracts": 31.3,
+      "entry": 3.1892,
+      "mark": 3.185252342595,
+      "uPnl": -0.12356167677649736
     },
     {
       "symbol": "BTC/USDso:USDso",
       "side": "short",
       "contracts": 0.0012,
       "entry": 83209.2,
-      "mark": 83068.62407022079,
-      "uPnl": 0.16869111573505213
+      "mark": 82397.53542755752,
+      "uPnl": 0.9739974869309691
     }
   ],
   "funding": [
     {
       "symbol": "BTC/USDso:USDso",
-      "apr": 1.3265629077736538,
+      "apr": 1.3235181137246892,
       "paidSide": "short",
-      "mark": 83071.96157022078
+      "mark": 82397.53542755752
     },
     {
       "symbol": "LIT/USDso:USDso",
-      "apr": -0.2880783531677315,
+      "apr": -0.359267256803413,
       "paidSide": "long",
-      "mark": 3.340825882352
+      "mark": 3.1852523425949997
     },
     {
       "symbol": "ZRO/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 1.965262647227
+      "mark": 1.963767196809
     },
     {
       "symbol": "VVV/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 26.097532986752
+      "mark": 25.400797728185
     },
     {
       "symbol": "1000PEPE/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 0.004541980734
+      "mark": 0.004571554164
     },
     {
       "symbol": "PUMP/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 0.004682840579
+      "mark": 0.004593033275
     },
     {
       "symbol": "ZEC/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 1213.4273248423422
+      "mark": 1203.5845142482808
     },
     {
       "symbol": "TAO/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 276.4874467684815
+      "mark": 271.8941027969435
     },
     {
       "symbol": "WLD/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 0.57889899603
+      "mark": 0.5806675932484999
+    },
+    {
+      "symbol": "NEAR/USDso:USDso",
+      "apr": 0.1095,
+      "paidSide": "short",
+      "mark": 4.893771656756
     },
     {
       "symbol": "XLM/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 0.181646761545
+      "mark": 0.178621959911
     },
     {
       "symbol": "AVAX/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 9.8519473180085
+      "mark": 9.6221785139775
     },
     {
       "symbol": "LINK/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 12.42313899299
+      "mark": 12.159711751898
     },
     {
       "symbol": "SUI/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 1.0366467953255
+      "mark": 1.011907931678
     },
     {
       "symbol": "ADA/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 0.224968656354
+      "mark": 0.2204428131935
     },
     {
       "symbol": "BNB/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 737.5220088666749
+      "mark": 736.5932283368151
     },
     {
       "symbol": "DOGE/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 0.081668739637
+      "mark": 0.080978127733
     },
     {
       "symbol": "XRP/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 1.3346360263485
+      "mark": 1.319758263629
     },
     {
       "symbol": "HYPE/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 81.51639123644
+      "mark": 79.804696578822
     },
     {
       "symbol": "SOL/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 107.4081928765865
+      "mark": 105.7119740322765
     },
     {
       "symbol": "ETH/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 2459.4590280907782
-    },
-    {
-      "symbol": "NEAR/USDso:USDso",
-      "apr": 0.02967121946844534,
-      "paidSide": "short",
-      "mark": 5.014947631198999
+      "mark": 2433.766609568909
     }
   ],
   "target": [
     {
       "symbol": "BTC/USDso:USDso",
       "side": "short",
-      "apr": 1.3265629077736538,
+      "apr": 1.3235181137246892,
       "notional": 100
     },
     {
       "symbol": "LIT/USDso:USDso",
       "side": "long",
-      "apr": -0.2880783531677315,
+      "apr": -0.359267256803413,
       "notional": 100
     }
   ]
