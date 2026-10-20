@@ -1,10 +1,10 @@
 # Arena Autopilot
 
 > **Judges, start here:**
-> - **[Judge mode: 60-second tour](docs/judge.html)** (`docs/judge.html`): live market → carry decision → Somnia Agent verdict → live Tokyo trades → feedback + Carry Leaderboard, in 5 steps.
-> - **[Verifiable Decision Timeline](docs/timeline.html)** (`docs/timeline.html`): every bot tick from `journal/` with its inputs, risk-officer verdict, deterministic gates, the action taken or refused, and tx hashes you can verify against Somnia RPC in the browser (plus CSV export).
+> - **[Judge mode: 60-second tour](https://alien1-stack.github.io/alien1-stack/radar/judge.html)** (`docs/judge.html`): live market → carry decision → Somnia Agent verdict → live Tokyo trades → feedback + Carry Leaderboard, in 5 steps.
+> - **[Verifiable Decision Timeline](https://alien1-stack.github.io/alien1-stack/radar/timeline.html)** (`docs/timeline.html`): every bot tick from `journal/` with its inputs, risk-officer verdict, deterministic gates, the action taken or refused, and tx hashes you can verify against Somnia RPC in the browser (plus CSV export).
 >
-> Both are static pages with no wallet. GitHub shows their source, so to view them serve the repo root (`python3 -m http.server`) and open `/docs/judge.html`, or open them wherever `docs/` is published.
+> Both are static pages with no wallet, hosted live at the links above (source in `docs/`).
 
 **A market-neutral funding-carry bot for dreamDEX perps on Somnia testnet.**
 
