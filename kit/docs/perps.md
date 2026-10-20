@@ -2,8 +2,10 @@
 
 The `perp-*` strategies trade DreamDEX perpetual futures. They run on the **Hideki
 testnet** (chain 50383), where the [DreamDEX testnet app](https://app.testnet.dreamdex.io)
-and Perps Arena live. Mainnet has no perp markets, so `NETWORK=mainnet` is refused at
-startup.
+and Perps Arena live. Mainnet has no perp markets yet, so `NETWORK=mainnet` fails fast at
+startup until the perp addresses are known, either from a `@somnia-chain/markets-sdk`
+release whose `SOMNIA_MAINNET_ADDRESSES` carries `perpPoolFactory`, or from
+`PERP_ADDRESSES_JSON` (see `.env.example`).
 
 | Strategy | What it does |
 | --- | --- |
