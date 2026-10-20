@@ -30,4 +30,7 @@ Add `event OrderRejected(address indexed owner, uint8 indexed reason, uint256 <r
 Output above, captured 2026-10-20 ~13:30 UTC. The scan script is in this folder.
 
 ## Environment
-@somnia-chain/markets-sdk 0.32.1, viem 2.57.7, Node 22, Somnia Tokyo testnet (chain 50383), read-only.
+- SDK: @somnia-chain/markets-sdk 0.32.1
+- Network: Somnia Tokyo testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network)
+- Wallet: n/a (read-only repro, no account needed)
+- Other: viem 2.57.7, Node 22, read-only.
