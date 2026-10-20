@@ -1,4 +1,4 @@
-# At the market-wide OI cap, crossing limit orders rest instead of matching (crossed book on NEAR/XRP/BTC), and getMaxPerpOrderSize still says placeable
+# At the market-wide OI cap, crossing limit orders rest instead of matching (crossed book on NEAR/XRP/BTC)
 
 Severity: major
 Area: contracts
@@ -50,7 +50,7 @@ BTC buy  placeable true maxQuantity 0.75051 increasing 0.11774 limitedBy initial
 ```
 The docs example sizes a BTC order with exactly this call. BTC is one of the capped markets.
 
-A crossing order whose fill would push OI past the cap is neither matched up to the headroom nor rejected (`OpenInterestCapExceeded` exists in the error ABI). The whole order **rests at a crossing price**. From then on, every other crossing order that would add OI also rests behind it, so the book stays crossed. The perps docs don't mention a market-wide OI cap at all; they only cover the per-account `maxPositionSize`.
+A crossing order whose fill would push OI past the cap is neither matched up to the headroom nor rejected (`OpenInterestCapExceeded` exists in the error ABI). The whole order **rests at a crossing price**. From then on, every other crossing order that would add OI also rests behind it, so the book stays crossed. The trader docs list the market-wide OI cap. Nothing says that hitting it leaves a crossing order resting through the opposite side instead of rejecting it with `OpenInterestCapExceeded`. (`getMaxPerpOrderSize` ignores `maxOpenInterest` by design, per the SDK notes, so the output below is context, not part of the bug.)
 
 ## Addendum (2026-10-20 ~08:30 UTC): even an OI-neutral match does not happen
 `getPerpPosition` on the NEAR-PERP crossing pair (read-only, MarginBank `0x4787…1F394`):
