@@ -83,4 +83,7 @@ In the liquidation fee path, credit the tier (`InsuranceFund.creditTier(tier, am
 Outputs above. `011-repro.mts` is in this folder.
 
 ## Environment
-@somnia-chain/markets-sdk 0.32.1, Node 22, Somnia Tokyo testnet (chain 50383), MarginBank 0x478769E1177C0773c43A593DCCc4Ad15F15F1394, LiquidationEngine 0xA66d3C24Ad4a389d863846905D8173e1017e9F4D, InsuranceFund 0x50826894D47C6D4f3BeA38BFDC7Dc5c5be171b80, RPC https://api.hideki2.infra.testnet.somnia.network, indexer https://hideki-dev.smk.somnia.host/v1/graphql, read-only.
+- SDK: @somnia-chain/markets-sdk 0.32.1
+- Network: Somnia Tokyo testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network)
+- Wallet: n/a (read-only repro, no account needed)
+- Other: Node 22, MarginBank 0x478769E1177C0773c43A593DCCc4Ad15F15F1394, LiquidationEngine 0xA66d3C24Ad4a389d863846905D8173e1017e9F4D, InsuranceFund 0x50826894D47C6D4f3BeA38BFDC7Dc5c5be171b80, indexer https://hideki-dev.smk.somnia.host/v1/graphql, read-only.
