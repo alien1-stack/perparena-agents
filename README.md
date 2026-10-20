@@ -10,7 +10,8 @@ Most perp bots pick one market and one direction. Arena Autopilot looks at **all
 
 Every decision and every transaction hash goes into a public journal, and a static dashboard reads that journal.
 
-- **Dashboard:** `docs/index.html` (GitHub Pages)
+- **Live market radar (no wallet needed):** https://alien1-stack.github.io/alien1-stack/radar/ (source: `docs/radar.html`)
+- **Bot dashboard:** `docs/index.html` (reads `docs/data.json` written by each tick)
 - **Strategy:** `kit/strategies/arena-autopilot/src/tick.ts`
 - **Feedback track items:** `feedback/`
 
