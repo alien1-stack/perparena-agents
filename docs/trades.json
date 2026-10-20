@@ -1,0 +1,26 @@
+[
+  {
+    "t": "2026-10-20T18:49:04.131Z",
+    "kind": "trade",
+    "symbol": "LIT/USDso:USDso",
+    "side": "short",
+    "why": "close (stop-loss -4.97%)",
+    "price": 3.1791,
+    "quantity": 29.8,
+    "filled": 29.8,
+    "hash": "0xa59c900f5f88f5fba9996b4103180fa224ed358715a0c25e411f6b5fbb73903a",
+    "orderId": "36893488147419657711"
+  },
+  {
+    "t": "2026-10-20T18:49:05.699Z",
+    "kind": "trade",
+    "symbol": "LIT/USDso:USDso",
+    "side": "long",
+    "why": "open carry -35.9% APR",
+    "price": 3.1983,
+    "quantity": 31.3,
+    "filled": 31.3,
+    "hash": "0x49ff342d0ec1b103c74201880e137177176d6b3093b3b8b887617de4b53fb307",
+    "orderId": "36893488147419657726"
+  }
+]
