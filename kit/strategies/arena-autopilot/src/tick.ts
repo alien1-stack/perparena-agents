@@ -104,11 +104,12 @@ function bookSummary(book: Leg[]): string {
 type Event = Record<string, unknown> & { t: string; kind: string };
 
 const now = () => new Date().toISOString();
+const big = (_: string, v: unknown) => (typeof v === "bigint" ? v.toString() : v);
 const events: Event[] = [];
 function log(kind: string, data: Record<string, unknown> = {}) {
   const e = { t: now(), kind, ...data };
   events.push(e);
-  console.log(kind, JSON.stringify(data));
+  console.log(kind, JSON.stringify(data, big));
 }
 
 function writeJson(path: string, value: unknown) {
@@ -227,7 +228,7 @@ async function main() {
   writeJson(resolve(OUT, "docs/data.json"), snapshot);
   mkdirSync(resolve(OUT, "journal"), { recursive: true });
   const day = now().slice(0, 10);
-  appendFileSync(resolve(OUT, `journal/${day}.jsonl`), events.map((e) => JSON.stringify(e)).join("\n") + "\n");
+  appendFileSync(resolve(OUT, `journal/${day}.jsonl`), events.map((e) => JSON.stringify(e, big)).join("\n") + "\n");
   const tradesPath = resolve(OUT, "docs/trades.json");
   const prior = existsSync(tradesPath) ? (JSON.parse(readFileSync(tradesPath, "utf8")) as Event[]) : [];
   writeJson(tradesPath, [...events.filter((e) => e.kind === "trade"), ...prior].slice(0, 500));
