@@ -7,6 +7,9 @@
 //   3. exits legs that left the target, whose funding fell under EXIT_APR, or
 //      that hit the per-leg stop-loss (watched here, because a trading key
 //      cannot arm stops for the account)
+//   3b. (AUTOPILOT_SOMNIA_AGENT=advisory|gate) asks Somnia's on-chain LLM agent
+//      to APPROVE/REJECT the target book; in gate mode anything but APPROVE
+//      skips entries, in advisory mode the verdict is only journaled
 //   4. opens missing legs with IOC orders sized by the pool's own rules
 //   5. appends every decision and tx hash to journal/ and rewrites
 //      site/data.json, which the public dashboard reads
@@ -34,6 +37,7 @@ import {
   type PerpMarket,
   type Side,
 } from "@dreamdex-bot-kit/perp-core";
+import { askRiskOfficer, type BookFacts } from "./somnia-agent.js";
 
 loadEnv();
 const LEG_NOTIONAL = envNum("AUTOPILOT_LEG_NOTIONAL_USDSO", 100);
@@ -44,8 +48,59 @@ const EXIT_APR = envNum("AUTOPILOT_EXIT_APR", 0.05);
 const STOP_LOSS_PCT = envNum("AUTOPILOT_STOP_LOSS_PCT", 4);
 const SLIPPAGE_BPS = envNum("AUTOPILOT_SLIPPAGE_BPS", 30);
 const OUT = resolve(process.env.AUTOPILOT_OUT_DIR ?? resolve(process.cwd(), "../../.."));
+// Somnia on-chain LLM risk officer (needs SOMNIA_AGENT_PRIVATE_KEY with STT on Shannon).
+// unset/false: off. advisory (or true): ask and journal only. gate: also skip entries unless APPROVE.
+const SOMNIA_MODE = ((): "off" | "advisory" | "gate" => {
+  const v = (process.env.AUTOPILOT_SOMNIA_AGENT ?? "").toLowerCase();
+  if (v === "gate") return "gate";
+  if (v === "advisory" || v === "true") return "advisory";
+  return "off";
+})();
 
 type Leg = { symbol: string; side: Side; apr: number; notional: number };
+type View = { m: PerpMarket; mark: number | undefined };
+
+/** Facts for the risk officer: legs, stop-loss, equity, and pool headroom read from getMaxPerpOrderSize. */
+async function bookFacts(
+  ctx: ReturnType<typeof createExchange>,
+  book: Leg[],
+  bySymbol: Map<string, View>,
+  account: `0x${string}` | undefined,
+): Promise<BookFacts> {
+  const legs: BookFacts["legs"] = [];
+  for (const l of book) {
+    const v = bySymbol.get(l.symbol);
+    const leg: BookFacts["legs"][number] = { symbol: v?.m.display ?? l.symbol, side: l.side, notional: l.notional, fundingApr: l.apr };
+    if (account && v?.mark !== undefined) {
+      try {
+        const price = alignPrice(BigInt(Math.round(v.mark * 1e18)), v.m.info);
+        const max = await sizeOrder(ctx.exchange, { market: v.m, account, side: l.side, price, wanted: 2n ** 200n, tradingKey: ctx.tradingKey });
+        leg.headroom = (Number(max.quantity) / 10 ** v.m.info.baseDecimals) * v.mark;
+        leg.limitedBy = max.limitedBy ?? max.reason;
+      } catch {
+        /* headroom stays unknown */
+      }
+    }
+    legs.push(leg);
+  }
+  let equity: number | undefined;
+  const first = book[0] && bySymbol.get(book[0].symbol);
+  if (account && first) {
+    try {
+      equity = Number((await marginSnapshot(ctx.exchange, first.m, account)).equity) / 1e18;
+    } catch {
+      /* equity stays unknown */
+    }
+  }
+  return { legs, stopLossPct: STOP_LOSS_PCT, equity };
+}
+
+/** "short BTC-PERP 100 USDso at +180.0% APR funding, long LIT-PERP ..., net exposure 0 USDso" */
+function bookSummary(book: Leg[]): string {
+  const legs = book.map((l) => `${l.side} ${l.symbol} ${l.notional} USDso at ${l.apr >= 0 ? "+" : ""}${(l.apr * 100).toFixed(1)}% APR funding`);
+  const net = book.reduce((s, l) => s + (l.side === "long" ? l.notional : -l.notional), 0);
+  return `${legs.join(", ")}, net exposure ${net} USDso`;
+}
 type Event = Record<string, unknown> & { t: string; kind: string };
 
 const now = () => new Date().toISOString();
@@ -92,6 +147,7 @@ async function main() {
   }
   log("target", { net, legs: target.map((l) => `${l.side} ${l.symbol} ${(l.apr * 100).toFixed(1)}%`) });
 
+  let riskOfficer: Record<string, unknown> | undefined;
   const positions = account ? await ctx.exchange.fetchPositions() : [];
   const wanted = new Map(target.map((l) => [l.symbol, l]));
 
@@ -112,6 +168,33 @@ async function main() {
       continue;
     }
     await trade(ctx, v.m, p.side === "long" ? "short" : "long", BigInt(Math.floor(p.contracts * 10 ** v.m.info.baseDecimals)), v.mark!, `close (${reason})`, live, account);
+  }
+
+  // 3b. Somnia Agents risk officer: an on-chain LLM (Somnia Shannon testnet,
+  // validator consensus) reviews the target book before new legs open.
+  // advisory: verdict is journaled only. gate: anything but APPROVE (REJECT,
+  // no verdict, error) skips entries; exits above already ran, so the gate
+  // can only ever reduce risk.
+  if (SOMNIA_MODE !== "off" && wanted.size > 0) {
+    const facts = await bookFacts(ctx, target, bySymbol, account);
+    const summary = bookSummary(target);
+    let verdict = "ERROR";
+    try {
+      const r = await askRiskOfficer(facts);
+      verdict = r.verdict;
+      riskOfficer = { mode: SOMNIA_MODE, summary, facts, ...r };
+      log("somnia-agent", { mode: SOMNIA_MODE, summary, verdict: r.verdict, response: r.response, status: r.status, requestId: r.requestId, requestTx: r.requestTx, resultTx: r.resultTx, depositStt: r.depositStt, links: r.links });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      riskOfficer = { mode: SOMNIA_MODE, summary, facts, verdict, error: msg.slice(0, 300) };
+      log("somnia-agent-error", { mode: SOMNIA_MODE, summary, error: msg.slice(0, 300) });
+    }
+    if (verdict !== "APPROVE") {
+      if (SOMNIA_MODE === "gate") {
+        log("skip-entries", { reason: `somnia risk officer ${verdict}`, legs: [...wanted.keys()] });
+        wanted.clear();
+      } else log("advisory", { note: `somnia risk officer ${verdict}; advisory mode, entries proceed`, legs: [...wanted.keys()] });
+    }
   }
 
   // 4. Entries.
@@ -139,6 +222,7 @@ async function main() {
       .map((v) => ({ symbol: v.m.symbol, apr: v.f.apr, paidSide: v.f.paidSide, mark: v.mark }))
       .sort((a, b) => Math.abs(b.apr) - Math.abs(a.apr)),
     target,
+    riskOfficer,
   };
   writeJson(resolve(OUT, "docs/data.json"), snapshot);
   mkdirSync(resolve(OUT, "journal"), { recursive: true });
