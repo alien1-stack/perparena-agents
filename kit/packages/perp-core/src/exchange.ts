@@ -9,7 +9,7 @@
 // The single entry point every perp strategy uses. Builds one `SomniaMarkets`
 // from .env, and hands back the exchange plus the resolved config.
 
-import { SomniaMarkets, SOMNIA_TESTNET_ADDRESSES } from "@somnia-chain/markets-sdk";
+import { SomniaMarkets } from "@somnia-chain/markets-sdk";
 import { loadConfig, loadEnv, makeChain, type PerpConfig } from "./config.js";
 import type { PerpMarket } from "./markets.js";
 import { createTradingKey, linkProblem, linkStatus, type TradingKey } from "./operator.js";
@@ -34,9 +34,13 @@ export interface PerpContext {
  * websocket-backed, so `loadMarkets()` throws `NotConfiguredError` without it
  * rather than falling back to HTTP.
  *
- * The bundled testnet address set serves Hideki too: the singletons the SDK
- * looks up sit at the same deterministic addresses there, and the perp pool,
- * MarginBank and stop registry come off each market row rather than from it.
+ * The address set is picked per network by `loadConfig()`: SOMNIA_TESTNET_ADDRESSES
+ * for hideki and testnet (the singletons the SDK looks up sit at the same
+ * deterministic addresses on Hideki, and the perp pool, MarginBank and stop
+ * registry come off each market row), SOMNIA_MAINNET_ADDRESSES for mainnet, with
+ * PERP_ADDRESSES_JSON laid over either. On mainnet `loadConfig()` throws before
+ * we get here unless the perp singletons are known, so this never connects to a
+ * mainnet with no perp markets to find.
  */
 export function createExchange(opts: { withSigner?: boolean } = {}): PerpContext {
   loadEnv();
@@ -53,7 +57,7 @@ export function createExchange(opts: { withSigner?: boolean } = {}): PerpContext
     indexerUrl: config.indexerUrl,
     chain,
     wsRpcUrl: config.wsRpcUrl,
-    addresses: SOMNIA_TESTNET_ADDRESSES,
+    addresses: config.addresses,
   };
 
   if (config.owner) {
