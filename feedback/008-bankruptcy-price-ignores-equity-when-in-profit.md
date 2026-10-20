@@ -79,4 +79,7 @@ Either compute the bankruptcy price from the position's allocated equity (includ
 Output above. `008-repro.mts` is in this folder.
 
 ## Environment
-@somnia-chain/markets-sdk 0.32.1, Node 22, Somnia Tokyo testnet (chain 50383), MarginBank 0x478769E1177C0773c43A593DCCc4Ad15F15F1394, RPC https://api.hideki2.infra.testnet.somnia.network, read-only.
+- SDK: @somnia-chain/markets-sdk 0.32.1
+- Network: Somnia Tokyo testnet (chain 50383, RPC https://api.hideki2.infra.testnet.somnia.network)
+- Wallet: n/a (read-only repro, no account needed)
+- Other: Node 22, MarginBank 0x478769E1177C0773c43A593DCCc4Ad15F15F1394, read-only.
