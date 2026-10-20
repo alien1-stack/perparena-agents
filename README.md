@@ -11,6 +11,8 @@ Most perp bots pick one market and one direction. Arena Autopilot looks at **all
 Every decision and every transaction hash goes into a public journal, and a static dashboard reads that journal.
 
 - **Live market radar (no wallet needed):** https://alien1-stack.github.io/alien1-stack/radar/ (source: `docs/radar.html`)
+- **Demo video (40s):** https://github.com/alien1-stack/perparena-agents/blob/main/docs/radar-demo.mp4
+- **Radar features:** live top carry pair (market-neutral), Wallet X-Ray for any address (`?wallet=0x...` deep link), one-click Share on X
 - **Bot dashboard:** `docs/index.html` (reads `docs/data.json` written by each tick)
 - **Strategy:** `kit/strategies/arena-autopilot/src/tick.ts`
 - **Feedback track items:** `feedback/`
