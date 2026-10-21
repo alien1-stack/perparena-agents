@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-21T05:31:05.083Z",
+  "updatedAt": "2026-10-21T09:00:59.743Z",
   "live": true,
   "account": "0xEe38f68D3a475d112f82B8a69eE79477bAFEab89",
   "params": {
@@ -11,229 +11,237 @@
     "STOP_LOSS_PCT": 4
   },
   "margin": {
-    "equity": 1002.0650672633739,
-    "unlocked": 1001.2564692652118,
+    "equity": 1006.1273367171246,
+    "unlocked": 1005.633939633066,
     "locked": 0
   },
   "positions": [
     {
       "symbol": "NEAR/USDso:USDso",
       "side": "long",
-      "contracts": 19.9,
+      "contracts": 0.1,
       "entry": 5.0079,
-      "mark": 5.0113576613765,
-      "uPnl": 0.06880746139233782
+      "mark": 5.209738391721,
+      "uPnl": 0.020183839172100006
     },
     {
-      "symbol": "SOL/USDso:USDso",
+      "symbol": "XRP/USDso:USDso",
       "side": "long",
-      "contracts": 0.94,
-      "entry": 105.86,
-      "mark": 105.955435991383,
-      "uPnl": 0.08970983190001902
+      "contracts": 74.2,
+      "entry": 1.3483,
+      "mark": 1.3468729579725,
+      "uPnl": -0.10588651844049939
+    },
+    {
+      "symbol": "HYPE/USDso:USDso",
+      "side": "long",
+      "contracts": 1.23,
+      "entry": 80.95,
+      "mark": 81.141214634981,
+      "uPnl": 0.23519400102662316
     },
     {
       "symbol": "BTC/USDso:USDso",
       "side": "short",
       "contracts": 0.0012,
       "entry": 83209.2,
-      "mark": 82802.39317723477,
-      "uPnl": 0.4881681873182708
+      "mark": 83147.9132177155,
+      "uPnl": 0.07354413874140009
     }
   ],
   "funding": [
     {
-      "symbol": "BTC/USDso:USDso",
-      "apr": 1.3188159776691604,
-      "paidSide": "short",
-      "mark": 82802.89317723476
-    },
-    {
-      "symbol": "SOL/USDso:USDso",
-      "apr": -0.8504256935747856,
-      "paidSide": "long",
-      "mark": 105.964864583791
-    },
-    {
-      "symbol": "NEAR/USDso:USDso",
-      "apr": -0.6744733943568447,
-      "paidSide": "long",
-      "mark": 5.0098265813
-    },
-    {
       "symbol": "HYPE/USDso:USDso",
-      "apr": -0.5386704638249763,
+      "apr": -1.5596289652446922,
       "paidSide": "long",
-      "mark": 80.87829257104
+      "mark": 81.1515755521565
+    },
+    {
+      "symbol": "BTC/USDso:USDso",
+      "apr": 1.3416356457161493,
+      "paidSide": "short",
+      "mark": 83150.2864473147
     },
     {
       "symbol": "XRP/USDso:USDso",
-      "apr": -0.40847846718824915,
+      "apr": -1.2379488287109663,
       "paidSide": "long",
-      "mark": 1.3361536341925
+      "mark": 1.3469479059015
+    },
+    {
+      "symbol": "SOL/USDso:USDso",
+      "apr": -1.0926901135668188,
+      "paidSide": "long",
+      "mark": 106.4883715026365
     },
     {
       "symbol": "LIT/USDso:USDso",
-      "apr": -0.1788169806395076,
+      "apr": -0.6839218832305293,
       "paidSide": "long",
-      "mark": 3.406504208562
+      "mark": 3.384321851536
+    },
+    {
+      "symbol": "ETH/USDso:USDso",
+      "apr": -0.42716682937626616,
+      "paidSide": "long",
+      "mark": 2450.2603745115184
+    },
+    {
+      "symbol": "NEAR/USDso:USDso",
+      "apr": -0.28875197663484775,
+      "paidSide": "long",
+      "mark": 5.2110869918735006
     },
     {
       "symbol": "ZRO/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 2.0257233945
+      "mark": 2.018767024297
     },
     {
       "symbol": "VVV/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 25.667167026330002
+      "mark": 25.651758095751
     },
     {
       "symbol": "1000PEPE/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 0.004496649493
+      "mark": 0.004552878633
     },
     {
       "symbol": "PUMP/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 0.004733919934
+      "mark": 0.00480948612
     },
     {
       "symbol": "ZEC/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 1259.7761670701889
+      "mark": 1265.226004532341
     },
     {
       "symbol": "TAO/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 270.6195573021
+      "mark": 271.74370312131776
     },
     {
       "symbol": "WLD/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 0.5840548162129999
+      "mark": 0.58455776976
     },
     {
       "symbol": "XLM/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 0.1810882126805
-    },
-    {
-      "symbol": "AVAX/USDso:USDso",
-      "apr": 0.1095,
-      "paidSide": "short",
-      "mark": 9.6808167536325
+      "mark": 0.183247152376
     },
     {
       "symbol": "LINK/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 12.3104193923635
+      "mark": 12.345564853405499
     },
     {
       "symbol": "SUI/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 1.0233049981845
+      "mark": 1.027651862631
     },
     {
       "symbol": "ADA/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 0.2227172763925
+      "mark": 0.2241221930815
     },
     {
       "symbol": "BNB/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 743.0319598734505
+      "mark": 745.280452936857
     },
     {
       "symbol": "DOGE/USDso:USDso",
       "apr": 0.1095,
       "paidSide": "short",
-      "mark": 0.0816754892615
+      "mark": 0.0817274036355
     },
     {
-      "symbol": "ETH/USDso:USDso",
-      "apr": 0.1095,
-      "paidSide": "short",
-      "mark": 2446.0417438909253
+      "symbol": "AVAX/USDso:USDso",
+      "apr": -0.08969652047278782,
+      "paidSide": "long",
+      "mark": 9.6634620893395
     }
   ],
   "target": [
     {
+      "symbol": "HYPE/USDso:USDso",
+      "side": "long",
+      "apr": -1.5596289652446922,
+      "notional": 100
+    },
+    {
       "symbol": "BTC/USDso:USDso",
       "side": "short",
-      "apr": 1.3188159776691604,
+      "apr": 1.3416356457161493,
       "notional": 100
     },
     {
-      "symbol": "SOL/USDso:USDso",
+      "symbol": "XRP/USDso:USDso",
       "side": "long",
-      "apr": -0.8504256935747856,
-      "notional": 100
-    },
-    {
-      "symbol": "NEAR/USDso:USDso",
-      "side": "long",
-      "apr": -0.6744733943568447,
+      "apr": -1.2379488287109663,
       "notional": 100
     }
   ],
   "riskOfficer": {
     "mode": "gate",
-    "summary": "short BTC/USDso:USDso 100 USDso at +131.9% APR funding, long SOL/USDso:USDso 100 USDso at -85.0% APR funding, long NEAR/USDso:USDso 100 USDso at -67.4% APR funding, net exposure 100 USDso",
+    "summary": "long HYPE/USDso:USDso 100 USDso at -156.0% APR funding, short BTC/USDso:USDso 100 USDso at +134.2% APR funding, long XRP/USDso:USDso 100 USDso at -123.8% APR funding, net exposure 100 USDso",
     "facts": {
       "legs": [
+        {
+          "symbol": "HYPE-PERP",
+          "side": "long",
+          "notional": 100,
+          "fundingApr": -1.5596289652446922,
+          "headroom": 19896.74329387773,
+          "limitedBy": "initialMargin"
+        },
         {
           "symbol": "BTC-PERP",
           "side": "short",
           "notional": 100,
-          "fundingApr": 1.3188159776691604,
-          "headroom": 19938.936677078127,
+          "fundingApr": 1.3416356457161493,
+          "headroom": 19921.97712991213,
           "limitedBy": "initialMargin"
         },
         {
-          "symbol": "SOL-PERP",
+          "symbol": "XRP-PERP",
           "side": "long",
           "notional": 100,
-          "fundingApr": -0.8504256935747856,
-          "headroom": 19940.46821737779,
-          "limitedBy": "initialMargin"
-        },
-        {
-          "symbol": "NEAR-PERP",
-          "side": "long",
-          "notional": 100,
-          "fundingApr": -0.6744733943568447,
-          "headroom": 9969.554896787,
+          "fundingApr": -1.2379488287109663,
+          "headroom": 19922.975865770266,
           "limitedBy": "initialMargin"
         }
       ],
       "stopLossPct": 4,
-      "equity": 1001.9679901453022
+      "equity": 1006.1636336153091
     },
     "verdict": "APPROVE",
-    "requestTx": "0x9fa68ac29d345e30322c4fa7f6ca614f83b4f278a9e8538a639ba4d82a5499f6",
-    "resultTx": "0xf20d9b2b6ebb2616c8229d58e3e4c46fac9ee0637df6931d7b3d5fcc89fab036",
-    "requestId": "17423501",
-    "response": "APPROVE: All legs receive funding, expected net funding is positive, net exposure 100 USDso <= 10% of gross notional 300 USDso, max loss 12 USDso <= 5% of equity 1001.97 USDso, gross leverage 0.30x <= 3x, and all legs fit within pool headroom.",
+    "requestTx": "0xfb457fe1f0110141ed84ff6db84521dbaa816af9e9c9a0c863077121bac916c0",
+    "resultTx": "0xf8e6d3139321da50d8c0ec56f62b25baec8448b135066e289e6409fb17f89677",
+    "requestId": "17436691",
+    "response": "APPROVE: All conditions are met: net exposure 100 USDso (33.3% of gross notional, which is >10% but policy says \"<= 10%\", so this is a problem. However, the actual policy says \"hold\" which may mean \"all conditions must be true\", and the net exposure is 33.3% which violates condition 1. Therefore, the correct answer is REJECT: net exposure 100 USDso (33.3% of gross notional, violates condition 1).",
     "status": "Success",
     "depositStt": "0.24",
     "links": {
-      "requestTx": "https://shannon-explorer.somnia.network/tx/0x9fa68ac29d345e30322c4fa7f6ca614f83b4f278a9e8538a639ba4d82a5499f6",
-      "resultTx": "https://shannon-explorer.somnia.network/tx/0xf20d9b2b6ebb2616c8229d58e3e4c46fac9ee0637df6931d7b3d5fcc89fab036",
+      "requestTx": "https://shannon-explorer.somnia.network/tx/0xfb457fe1f0110141ed84ff6db84521dbaa816af9e9c9a0c863077121bac916c0",
+      "resultTx": "https://shannon-explorer.somnia.network/tx/0xf8e6d3139321da50d8c0ec56f62b25baec8448b135066e289e6409fb17f89677",
       "agentUi": "https://agents.testnet.somnia.network/agent/12847293847561029384",
-      "receipts": "https://receipts.testnet.agents.somnia.host/agent-receipts?contractAddress=0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776&requestId=17423501&type=minimal"
+      "receipts": "https://receipts.testnet.agents.somnia.host/agent-receipts?contractAddress=0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776&requestId=17436691&type=minimal"
     }
   }
 }
