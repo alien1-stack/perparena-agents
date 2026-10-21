@@ -1,5 +1,17 @@
 [
   {
+    "t": "2026-10-21T22:35:35.239Z",
+    "kind": "trade",
+    "symbol": "ZRO/USDso:USDso",
+    "side": "short",
+    "why": "open carry 901.2% APR",
+    "price": 1.9482,
+    "quantity": 51.1,
+    "filled": 51.1,
+    "hash": "0x9f36d9d303c03d38ad09ae94dbfa0aff73c2e5ca91740cdd157a066b45101b1a",
+    "orderId": "332041393326772292218"
+  },
+  {
     "t": "2026-10-21T09:00:44.030Z",
     "kind": "trade",
     "symbol": "NEAR/USDso:USDso",
